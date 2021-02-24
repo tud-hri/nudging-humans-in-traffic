@@ -1,2 +1,6 @@
-# cognitive-av
-Making automated vehicles more compatible with humans by endowing them with human-based cogntive decision-making algorithms
+# Cognitive-AV
+
+Arkady Zgonnikov & Niek Beckers
+
+
+Making automated vehicles more compatible with humans by endowing AVs with human-based cogntive decision-making algorithms
