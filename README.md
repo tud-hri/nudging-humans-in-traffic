@@ -18,6 +18,7 @@ You probably need to activate the environment (sometimes this happens automatica
 venv\Scripts\activate.bat  # windows
 source venv/bin/activate   # unix/macos
 ```
+Check if the command line starts with `(venv)`, which means that the virtual environment is activated.
 
 Install the python packages:
 
