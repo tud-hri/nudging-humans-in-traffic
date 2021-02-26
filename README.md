@@ -5,6 +5,14 @@ Arkady Zgonnikov & Niek Beckers
 
 Making automated vehicles more compatible with humans by endowing AVs with human-based cogntive decision-making algorithms
 
+## Run
+
+As a first step we created an example scenario with an intersection, an ego vehicle turning left, and an oncoming AV.
+
+Run: 
+```python
+python run.py
+```
 
 ## Installation
 
