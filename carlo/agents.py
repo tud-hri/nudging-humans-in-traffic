@@ -1,5 +1,5 @@
-from entities import RectangleEntity, CircleEntity, RingEntity
-from geometry import Point
+from .entities import RectangleEntity, CircleEntity, RingEntity
+from .geometry import Point
 
 # For colors, we use tkinter colors. See http://www.science.smith.edu/dftwiki/index.php/Color_Charts_for_TKinter
 

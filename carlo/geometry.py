@@ -36,7 +36,7 @@ class Point:
         if isinstance(other, Line):
             AM = Line(other.p1, self)
             MB = Line(self, other.p2)
-            return np.close(np.abs(AM.dot(BM)), AM.length * MB.length)
+            return np.close(np.abs(AM.dot(MB)), AM.length * MB.length)
         
         elif isinstance(other, Rectangle):
             # Based on https://stackoverflow.com/a/2763387
