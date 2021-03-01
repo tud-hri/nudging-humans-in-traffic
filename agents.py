@@ -1,7 +1,9 @@
 import numpy as np
 
-import carlo
+import carlo.agents
 from carlo.entities import Point
+
+from carlo.interactive_controllers import KeyboardController
 
 
 class Car(carlo.agents.Car):
@@ -15,23 +17,27 @@ class CarHardCoded(Car):
     def __init__(self, center: Point, heading: float, input, color: str = 'red'):
         super(CarHardCoded, self).__init__(center, heading, color)
         self.u = input
+        self.k = 0  # index / time step
 
-    def set_control(self, k: int):
-        steer = self.u[0, k]
-        accelerate = self.u[1, k]
+    def set_control(self):
+        steer = self.u[0, self.k]
+        accelerate = self.u[1, self.k]
 
         super().set_control(steer, accelerate)
+
+        self.k += 1
 
 
 class CarUserControlled(Car):
     def __init__(self, center: Point, heading: float, color: str = 'blue'):
-        super(CarHardCoded, self).__init__(center, heading, color)
+        super(CarUserControlled, self).__init__(center, heading, color)
 
-    def set_control(self, steer, accelerate):
-        steer = min(max(steer, -np.pi), np.pi)  # limit steer to [-pi, pi]
-        accelerate = min(max(accelerate, -4.), 2.) # limit acceleration to [-4., 2.]
+    def set_control(self, inputSteering: float, inputAcceleration: float):
+        steer = min(max(inputSteering, -np.pi), np.pi)  # limit steer to [-pi, pi]
+        accelerate = min(max(inputAcceleration, -4.), 2.) # limit acceleration to [-4., 2.]
 
-        self.set_control(steer, accelerate)
+        super().set_control(steer, accelerate)
+
 
 class CarEvidenceAccumulation(Car):
     """
