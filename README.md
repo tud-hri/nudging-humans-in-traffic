@@ -3,8 +3,18 @@
 Arkady Zgonnikov & Niek Beckers
 
 
-Making automated vehicles more compatible with humans by endowing AVs with human-based cogntive decision-making algorithms
+Making automated vehicles more compatible with humans by endowing AVs with human-based cogntive decision-making algorithms.
 
+Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [model code](https://osf.io/x3ns6/).
+
+## Run
+
+As a first step we created an example scenario with an intersection, an ego vehicle turning left, and an oncoming AV (hardcoded actions for now).
+
+Run: 
+```python
+python run.py
+```
 
 ## Installation
 
