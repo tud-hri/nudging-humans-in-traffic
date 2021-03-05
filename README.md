@@ -36,7 +36,35 @@ Install the python packages:
 pip install -r requirements.txt
 ```
 
+### Optimization algorithms
 
+We need a optimization algorithm for path planning of our agents (AV and simulated human), with the following requirements:
+
+- open-source
+- reasonable fast solver (ideally sub 100ms depending on problem complexity)
+- usable for offline simulation and human-in-the-loop experiments (connected to solver speed)
+- relatively simple implementation for fast prototyping (including built-in tools for differentiation of the objective function) 
+- python interface (preferred, if not, CPython can be used)
+
+We start with ACADOS, a new iteration of ACADO, which also uses CASADI for differentiation. It promises to be fast, specifically made for NMPC, has a python interface, actively maintained at the moment. Drawbacks are that it is still in development, documentation is limited compared to ACADO. 
+
+__References__
+
+- See [this thread](https://groups.google.com/g/casadi-users/c/Z_zu8hqTR3A?pli=1) for a good comparison between CASADI and ACADO/ACADOS.
+- [__ACADOS__](https://github.com/acados/acados)
+    + Fast embedded solver for NMPC
+    + Interface with Python
+    + [github](https://github.com/acados/acados), [paper](https://arxiv.org/abs/1910.13753)
+- [__CASADI__](https://web.casadi.org/)
+    + Possible to use IPOPT
+    + More general optimization framework, therefore probably a bit slower. 
+    + Used by ACADOS too for differentiation, among others. 
+- [__ACADO__](https://acado.github.io/)
+    + Previous version of ACADOS.
+    + Reasonably fast.
+    + C++ (we can use CPython to interface it with Python; see [link](http://grauonline.de/wordpress/?page_id=3244)). 
+    + (Nonlinear) MPC. 
+    
 ### CARLO
 We are using [CARLO](https://github.com/Stanford-ILIAD/CARLO) as a simple 2D driving simulator. 
 
