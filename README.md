@@ -50,7 +50,7 @@ We start with ACADOS, a new iteration of ACADO, which also uses CASADI for diffe
 
 __References__
 
-- See [this thread](https://groups.google.com/g/casadi-users/c/Z_zu8hqTR3A?pli=1) for a good comparison between CASADI and ACADO/ACADOS.
+
 - [__ACADOS__](https://github.com/acados/acados)
     + Fast embedded solver for NMPC
     + Interface with Python
@@ -64,6 +64,7 @@ __References__
     + Reasonably fast.
     + C++ (we can use CPython to interface it with Python; see [link](http://grauonline.de/wordpress/?page_id=3244)). 
     + (Nonlinear) MPC. 
+- See [this thread](https://groups.google.com/g/casadi-users/c/Z_zu8hqTR3A?pli=1) for a good comparison between CASADI and ACADO/ACADOS.
     
 ### CARLO
 We are using [CARLO](https://github.com/Stanford-ILIAD/CARLO) as a simple 2D driving simulator. 
