@@ -45,8 +45,9 @@ We need a optimization algorithm for path planning of our agents (AV and simulat
 - usable for offline simulation and human-in-the-loop experiments (connected to solver speed)
 - relatively simple implementation for fast prototyping (including built-in tools for differentiation of the objective function) 
 - python interface (preferred, if not, CPython can be used)
+- cross-platform out-of-the-box
 
-We start with ACADOS, a new iteration of ACADO, which also uses CASADI for differentiation. It promises to be fast, specifically made for NMPC, has a python interface, actively maintained at the moment. Drawbacks are that it is still in development, documentation is limited compared to ACADO. 
+We will use ACADO as our optimizer toolbox, because of it's long track record, documentation and out-of-the-box support for Windows and linux. Ideally we would've moved to ACADOS (the newer, better cousin of ACADO), but Windows support is limited.
 
 __References__
 
