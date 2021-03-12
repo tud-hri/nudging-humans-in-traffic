@@ -7,14 +7,14 @@ from dynamics import CarDynamics
 
 
 class Car(carlo.agents.Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, world=None, color: str = 'red'):
+    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'red'):
         super(Car, self).__init__(center, heading, color)
         x0 = np.array([center.x, center.y, heading, 0.])  # initial condition
         self.dynamics = CarDynamics(dt, x0=x0)
         # self.trajectory = None # work in progress - at some point we might want to store state and input in a separate object (and the histories)
         self.u_input = np.zeros((2, 1))  # [acceleration, steering]
         self.x_state = x0  # [x, y, phi, v]
-        self.world = world
+        self.world = None
 
     def set_control(self, inputSteering: float, inputAcceleration: float):
         """
@@ -46,8 +46,8 @@ class Car(carlo.agents.Car):
 
 
 class CarHardCoded(Car):
-    def __init__(self, center: Point, heading: float, input, dt: float = 0.1, world=None, color: str = 'red'):
-        super(CarHardCoded, self).__init__(center, heading, dt, world, color)
+    def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
+        super(CarHardCoded, self).__init__(center, heading, dt, color)
         self.u = input
         self.k = 0  # index / time step
 
@@ -61,21 +61,23 @@ class CarHardCoded(Car):
 
 
 class CarUserControlled(Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, world=None, color: str = 'blue'):
-        super(CarUserControlled, self).__init__(center, heading, dt, world, color)
-        self.controller = KeyboardController(self.world)
+    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'blue'):
+        super(CarUserControlled, self).__init__(center, heading, dt, color)
+        self.controller = None
 
     def set_control(self):
+        if self.controller is None:
+            self.controller = KeyboardController(self.world)
+
         steer = min(max(self.controller.steering, -np.pi), np.pi)  # limit steer to [-pi, pi]
         accelerate = min(max(self.controller.throttle, -4.), 2.)  # limit acceleration to [-4., 2.]
 
         super().set_control(steer, accelerate)
-
 
 class CarEvidenceAccumulation(Car):
     """
     Car with Arkady's model
     """
 
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, world=None, color: str = 'green'):
-        super(CarEvidenceAccumulation, self).__init__(center, heading, dt, world, color)
+    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'green'):
+        super(CarEvidenceAccumulation, self).__init__(center, heading, dt, color)

@@ -1,12 +1,10 @@
 import random
 import time
 
-import numpy as np
-
-import carlo.world
-from agents import CarHardCoded
+from agents import *
 from carlo.agents import Painting, RectangleBuilding
 from carlo.entities import Point
+import carlo.world
 
 
 class World(carlo.world.World):
@@ -127,20 +125,25 @@ def scenario1(dt, end_time):
     idx = random.randint(5, 10)
     u[0, idx + int(5 / dt):idx + int(11 / dt)] = 0.455
     u[1, idx + int(3 / dt):idx + int(12 / dt)] = 0.5
-    car_ego = CarHardCoded(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2., world=world,
-                           input=u, color='blue')
-    # car_ego = CarUserControlled(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2.,
-    #                             world=world, color='yellow')
+    # car_ego = CarHardCoded(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2., world=world,
+    #                        input=u, color='blue')
+    car_ego = CarUserControlled(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2.,
+                                color='yellow')
     world.add(car_ego)
 
     # add AV (hardcoded inputs)
     u = np.zeros((2, world.time_vector.shape[0]))
     u[1, 0:int(10 / dt)] = 0.5
     u[1, int(10 / dt):-1] = 0.05  # just a little bit of acceleration to negate friction
-    car_av = CarHardCoded(center=Point(p_intersection.x - 2 * lane_width / 4., world.height - 25.), heading=- np.pi / 2., world=world, input=u)
+    car_av = CarHardCoded(center=Point(p_intersection.x - 2 * lane_width / 4., world.height - 25.), heading=- np.pi / 2., input=u)
     world.add(car_av)
 
     # render, just to get to see our work come to life
     world.render()
+
+    # @Arkady - my attempt, but this is suboptimal, want to use a @setter for this ideally
+    # giving the cars 'world' as a paremeter doesn't seem to work for the usercontrolled car.
+    car_ego.world = world
+    car_av.world = world
 
     return world
