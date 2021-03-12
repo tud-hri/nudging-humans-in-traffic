@@ -27,7 +27,9 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
     - [x] ~Or code quick-n-dirty MPC ourselves?~
     - [x] ~Or just code a simple longitudinal controller following a velocity profile?~
 - [ ] Prototype simple path planner in casadi - Niek 09/03
-    - [ ] implement car dynamics using CasADi - Niek
+    - [x] ~implement car dynamics using CasADi - Niek~
+    - [ ] implement simple MPC for AV - Niek 12/03
+    - [ ] implement safe-trajectory MPC - Niek 12/03
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
@@ -61,7 +63,7 @@ Install the python packages:
 pip install -r requirements.txt
 ```
 
-### Optimization algorithms
+### Optimization algorithms and toolboxes
 
 We need a optimization algorithm for path planning of our agents (AV and simulated human), with the following requirements:
 
@@ -74,8 +76,9 @@ We need a optimization algorithm for path planning of our agents (AV and simulat
 
 For now, we will use the CasADi toolbox, which helps us with nonlinear optimization and algorithmic differentiation. To keep things simple, we'll use IPOPT as optimizer. CasADi is also used by ACADOS, a fast optimizer for NMPC, often used in robotics.
 
-__References__
+120321: we have implemented the car dynamics in casadi.
 
+__References__
 
 - [__ACADOS__](https://github.com/acados/acados)
     + Fast embedded solver for NMPC
