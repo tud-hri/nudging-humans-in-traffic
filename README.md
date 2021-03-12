@@ -13,6 +13,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
     - [x] ~Add refs~
 - [x] ~Create Github repo - Niek - 02/03~
 - [ ] Create a test-driven development environment - Arkady, Niek
+    - [ ] Discuss whether CARLO is the way to go - we're overriding more and more of their code
     - [x] ~Create simulation setup based on CARLO - Niek~ 
     - [ ] Refactor simulation setup - Arkady 09/03
     - [x] ~Write down testing scenarios - Arkady 02/03~
@@ -20,12 +21,13 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
         - [ ] Implement simulated human - Arkady 09/03
     - [x] ~Measures - Arkady 02/03~
     - [x] ~Validation criteria~
-- [ ] Decide on reference controller implementation - Niek
-    - [ ] Discuss restructure of simulation setup
-    - [ ] Prototype simple path planner in theano/pytorch - Niek 09/03
+- [x] ~Decide on reference controller implementation - Niek~
+    - [x] ~Discuss restructure of simulation setup~
     - [x] ~Search open source implementation? - Niek 02/03~
     - [x] ~Or code quick-n-dirty MPC ourselves?~
     - [x] ~Or just code a simple longitudinal controller following a velocity profile?~
+- [ ] Prototype simple path planner in casadi - Niek 09/03
+    - [ ] implement car dynamics using CasADi - Niek
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03

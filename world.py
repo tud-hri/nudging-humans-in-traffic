@@ -4,11 +4,10 @@ import time
 import numpy as np
 
 import carlo.world
+from agents import CarHardCoded
 from carlo.agents import Painting, RectangleBuilding
 from carlo.entities import Point
-from carlo.interactive_controllers import KeyboardController
 
-from agents import CarHardCoded, CarUserControlled
 
 class World(carlo.world.World):
     def __init__(self, dt: float, end_time: float, width: float, height: float, ppm: float = 8):
@@ -31,18 +30,10 @@ class World(carlo.world.World):
 
     def run(self):
 
-        # check if we need to create a controller object
-        if any(isinstance(x, CarUserControlled) for x in self.dynamic_agents):
-            controller = KeyboardController(self)
-
         for k in range(0, len(self.time_vector)):
             # set control for all agents
             for agent in self.dynamic_agents:
-                if isinstance(agent, CarUserControlled):
-                    steer, accelerate = controller.steering, controller.throttle
-                    agent.set_control(steer, accelerate)
-                else:
-                    agent.set_control()
+                agent.set_control()
 
             # step the world and render
             self.tick()
@@ -136,16 +127,17 @@ def scenario1(dt, end_time):
     idx = random.randint(5, 10)
     u[0, idx + int(5 / dt):idx + int(11 / dt)] = 0.455
     u[1, idx + int(3 / dt):idx + int(12 / dt)] = 0.5
-    # car_ego = CarHardCoded(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2., input=u, color='blue')
-    car_ego = CarUserControlled(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2.,
-                                color='yellow')
+    car_ego = CarHardCoded(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2., world=world,
+                           input=u, color='blue')
+    # car_ego = CarUserControlled(center=Point(p_intersection.x + 2 * lane_width / 4., p_intersection.y - 2 * lane_width / 2. - 3.), heading=np.pi / 2.,
+    #                             world=world, color='yellow')
     world.add(car_ego)
 
     # add AV (hardcoded inputs)
     u = np.zeros((2, world.time_vector.shape[0]))
     u[1, 0:int(10 / dt)] = 0.5
     u[1, int(10 / dt):-1] = 0.05  # just a little bit of acceleration to negate friction
-    car_av = CarHardCoded(center=Point(p_intersection.x - 2 * lane_width / 4., world.height - 25.), heading=- np.pi / 2., input=u)
+    car_av = CarHardCoded(center=Point(p_intersection.x - 2 * lane_width / 4., world.height - 25.), heading=- np.pi / 2., world=world, input=u)
     world.add(car_av)
 
     # render, just to get to see our work come to life
