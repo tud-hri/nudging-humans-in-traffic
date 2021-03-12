@@ -29,7 +29,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [ ] Prototype simple path planner in casadi - Niek 09/03
     - [x] ~implement car dynamics using CasADi - Niek~
     - [ ] implement simple MPC for AV - Niek 12/03
-    - [ ] implement safe-trajectory MPC - Niek 12/03
+    - [ ] implement safe-trajectory MPC - Niek 19/03
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
