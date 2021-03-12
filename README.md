@@ -76,7 +76,7 @@ We need a optimization algorithm for path planning of our agents (AV and simulat
 
 For now, we will use the CasADi toolbox, which helps us with nonlinear optimization and algorithmic differentiation. To keep things simple, we'll use IPOPT as optimizer. CasADi is also used by ACADOS, a fast optimizer for NMPC, often used in robotics.
 
-120321: we have implemented the car dynamics in casadi.
+120321: we have implemented the car dynamics (simple bicycle, see [this paper](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225830)) in casadi.
 
 __References__
 
@@ -89,6 +89,7 @@ __References__
     + More general optimization framework, therefore probably a bit slower. 
     + Used by ACADOS too for differentiation, among others. 
     + [MPC example/tutorial](https://www.youtube.com/watch?v=JI-AyLv68Xs)
+    + [Useful python implementation paper](https://www.researchgate.net/publication/261081671_Dynamic_optimization_with_CasADi)
 - [__ACADO__](https://acado.github.io/)
     + Previous version of ACADOS.
     + Reasonably fast.
