@@ -1,5 +1,5 @@
-import numpy as np
 import pygame
+from casadi import *
 from pygame.locals import *
 
 from dynamics import CarDynamics
@@ -57,8 +57,8 @@ class Car:
 class CarUserControlled(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'blue'):
         super(CarUserControlled, self).__init__(p0, phi0, v0, dt, color)
-        self.accelerate = 0.
-        self.steer = 0.
+        self.accelerate_int = 0.
+        self.steer_int = 0.
 
     def set_input(self, accelerate=0., steer=0.):
         """
@@ -74,56 +74,72 @@ class CarUserControlled(Car):
         keys = pygame.key.get_pressed()
 
         if not keys[K_UP] or not keys[K_DOWN]:
-            self.accelerate = 0.
+            self.accelerate_int = 0.
         if keys[K_UP]:
-            self.accelerate += accelerate_sensitivity * self.dt
+            self.accelerate_int += accelerate_sensitivity * self.dt
         elif keys[K_DOWN]:
-            self.accelerate -= decelerate_sensitivity * self.dt
-        accelerate = min(max(self.accelerate, -4.), 2.)  # limit acceleration to [-4., 2.]
+            self.accelerate_int -= decelerate_sensitivity * self.dt
+        accelerate = min(max(self.accelerate_int, -4.), 2.)  # limit acceleration to [-4., 2.]
 
         if not keys[K_LEFT] or not keys[K_RIGHT]:
-            self.steer = 0.
+            self.steer_int = 0.
         if keys[K_LEFT]:
-            self.steer += steer_sensitivity * self.dt
+            self.steer_int += steer_sensitivity * self.dt
         elif keys[K_RIGHT]:
-            self.steer -= steer_sensitivity * self.dt
-        steer = min(max(self.steer, -np.pi), np.pi)  # limit steer to [-pi, pi]
+            self.steer_int -= steer_sensitivity * self.dt
+        steer = min(max(self.steer_int, -np.pi), np.pi)  # limit steer to [-pi, pi]
 
         super().set_input(accelerate, steer)
 
-# class CarHardCoded(Car):
-#     def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
-#         super(CarHardCoded, self).__init__(center, heading, dt, color)
-#         self.u = input
-#         self.k = 0  # index / time step
-#
-#     def set_control(self):
-#         steer = self.u[0, self.k]
-#         accelerate = self.u[1, self.k]
-#
-#         super().set_control(steer, accelerate)
-#
-#         self.k += 1
-#
-#
-# class CarUserControlled(Car):
-#     def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'blue'):
-#         super(CarUserControlled, self).__init__(center, heading, dt, color)
-#         self.controller = None
-#
-#     def set_control(self):
-#         if self.controller is None:
-#             self.controller = KeyboardController(self.world)
-#
-#         steer = min(max(self.controller.steering, -np.pi), np.pi)  # limit steer to [-pi, pi]
-#         accelerate = min(max(self.controller.throttle, -4.), 2.)  # limit acceleration to [-4., 2.]
-#
-#         super().set_control(steer, accelerate)
-#
-# class CarEvidenceAccumulation(Car):
-#     """
-#     Car with Arkady's model
-#     """
-#
-#     def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'green'):
-#         super(CarEvidenceAccumulation, self).__init__(center, heading, dt, color)
+
+class CarSimpleOptimizer(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'yellow'):
+        super(CarSimpleOptimizer, self).__init__(p0, phi0, v0, dt, color)
+        self.th = 2.  # time horizon (2 seconds)
+        self.Nh = round(self.th / self.dt)  # number of steps in time horizon
+
+        # desired state
+        self.x_target = np.array([[p0[0]],
+                                  [0.],
+                                  [-np.pi / 2.],
+                                  [50. / 3.6]])
+
+        # setup the optimizer through CasADi
+        nx = self.x.shape[0]
+        self.opti = casadi.Opti()
+        self.x_opti = self.opti.variable(nx, self.Nh + 1)
+        self.u_opti = self.opti.variable(2, self.Nh)
+        self.p_opti = self.opti.parameter(nx, 1)
+
+        # set objective
+        Q = np.diag([.5, 1e-6, 0.05, .5])
+        dx = self.x_target - self.x_opti
+        self.opti.minimize(sumsqr(Q @ dx) + sumsqr(self.u_opti))
+
+        for k in range(0, self.Nh):
+            self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
+
+        self.opti.subject_to(self.opti.bounded(-10, self.u_opti[0], 10))
+        self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1], np.pi / 2.))
+        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3,:], 50. / 3.6))
+        self.opti.subject_to(self.x_opti[:, 0] == self.x)
+
+        # setup solver
+        p_opts = {"expand": True}
+        s_opts = {"max_iter": 1000, 'print_level': 0}
+        self.opti.solver('ipopt', p_opts, s_opts)
+
+    def set_input(self, accelerate=0., steer=0.):
+        # set current state of initial condition
+        self.opti.set_value(self.p_opti, self.x)
+
+        # solve the problem!
+        sol = self.opti.solve()
+
+        # select the first index for the control input
+        accelerate = sol.value(self.u_opti)[0, 0]
+        steer = sol.value(self.u_opti)[1, 0]
+
+        # print(self.x[3]*3.6)
+
+        super().set_input(accelerate, steer)

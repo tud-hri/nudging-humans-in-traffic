@@ -8,9 +8,9 @@ from world import World
 
 
 class Simulator:
-    def __init__(self, world, T: float, dt: float = 0.02, ppm: int = 6, realtime=True):
+    def __init__(self, world, T: float, dt: float = 0.1, ppm: int = 6, realtime=True):
         self.T = T
-        self.dt = max(dt, 0.01)  # max freq = 100Hz
+        self.dt = max(dt, 0.02)  # max freq = 50Hz
         self.N = round(self.T / self.dt)
         self.t = np.linspace(0., self.T - self.dt, self.N)
         self.world = world
