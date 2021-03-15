@@ -97,12 +97,3 @@ __References__
     + (Nonlinear) MPC. 
 - See [this thread](https://groups.google.com/g/casadi-users/c/Z_zu8hqTR3A?pli=1) for a good comparison between CASADI and ACADO/ACADOS.
 - [Aesara](https://github.com/pymc-devs/aesara) (new fork of Theano) is also an interesting option for optimization and differentiation.
-
-### CARLO
-We are using [CARLO](https://github.com/Stanford-ILIAD/CARLO) as a simple 2D driving simulator. 
-
-CARLO is added as a `git subtree`; to update it, run the following command:
-
-```python
-git subtree pull --prefix carlo https://github.com/Stanford-ILIAD/CARLO.git master --squash
-```

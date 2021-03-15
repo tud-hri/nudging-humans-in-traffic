@@ -33,6 +33,20 @@ class World:
         for _, agent in self.agents.items():
             agent.draw(window, ppm)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #     def create_intersection(self, p_intersection=Point(50., 30.), lane_width=3.):
 #         # create the intersection
 #         n_lanes = 2
