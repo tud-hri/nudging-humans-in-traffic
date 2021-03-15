@@ -1,4 +1,5 @@
 import numpy as np
+from human_model import HumanModel
 
 import carlo.agents
 from carlo.entities import Point
@@ -74,10 +75,24 @@ class CarUserControlled(Car):
 
         super().set_control(steer, accelerate)
 
-class CarEvidenceAccumulation(Car):
-    """
-    Car with Arkady's model
-    """
 
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'green'):
-        super(CarEvidenceAccumulation, self).__init__(center, heading, dt, color)
+class CarSimulatedHuman(Car):
+    def __init__(self, human_model: HumanModel, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
+        super(CarSimulatedHuman, self).__init__(center, heading, dt, color)
+        #
+        # u = np.zeros((2, world.time_vector.shape[0]))
+        # idx = random.randint(5, 10)
+        # u[0, idx + int(5 / dt):idx + int(11 / dt)] = 0.455
+        # u[1, idx + int(3 / dt):idx + int(12 / dt)] = 0.5
+
+        self.u = input
+        self.k = 0  # index / time step
+        self.human_model = human_model
+
+    def set_control(self):
+        steer = self.u[0, self.k]
+        accelerate = self.u[1, self.k]
+
+        super().set_control(steer, accelerate)
+
+        self.k += 1
