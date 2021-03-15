@@ -1,15 +1,19 @@
-'''
-Our world: an intersection with left-turn scenario
-'''
+import numpy as np
 
-import world
-import time
+from agents import Car, CarUserControlled
+from lane import HLane, VLane
+from simulator import Simulator
+from world import World
 
-# Run an example experiment
-dt = 0.1  # 100 ms time step
-end_time = 15  # run time seconds
+# a whole new woooooorld
+world = World(0.1, 80., 100.)
+world.lanes.append(VLane([40., 0.], [40., 120.], 3.))
+world.lanes.append(VLane([37., 0.], [37., 120.], 3.))
+world.lanes.append(HLane([0., 30.], [40., 30.], 3.))
 
-# create a scenario
-world = world.scenario1(dt, end_time)
+# add our cars
+world.agents.update({"human": CarUserControlled(p0=[40., 20.], phi0=np.pi / 2.)})
+world.agents.update({"av": Car(p0=[37., 90.], phi0=-np.pi / 2., color='yellow')})
 
-world.run()
+sim = Simulator(world, T=10., ppm=8)
+sim.run()

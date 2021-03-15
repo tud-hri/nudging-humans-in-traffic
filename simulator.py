@@ -35,9 +35,11 @@ class Simulator:
                 self.clock.tick(round(1. / self.dt))  # realtime, so wait a bit for the next tick/frame
 
             # do all the functional stuff here
-            world.tick()
-            world.draw(self.window, self.ppm)
+            self.world.tick()
 
+            # draw the world
+            self.window.fill((33, 138, 33))
+            self.world.draw(self.window, self.ppm)
             pygame.display.flip()
 
             # time keeping

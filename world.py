@@ -17,14 +17,13 @@ class World:
         self.lanes = []
 
     def tick(self):
-        pass
         # find action
-        # for _, agent in self.agents.items():
-        #     agent.set_control()
+        for _, agent in self.agents.items():
+            agent.set_input()
 
         # apply action, integrate
-        # for _, agent, in self.agents.items():
-        #     agent.tick()
+        for _, agent, in self.agents.items():
+            agent.tick()
 
     def draw(self, window, ppm):
         for lane in self.lanes:

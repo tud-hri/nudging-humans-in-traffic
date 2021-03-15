@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+from pygame.locals import *
 
 from dynamics import CarDynamics
 from utils import coordinate_transform
@@ -8,6 +9,7 @@ from utils import coordinate_transform
 class Car:
     def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'red'):
         x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
+        self.dt = dt
         self.dynamics = CarDynamics(dt, x0=x0)
         # self.trajectory = None # work in progress - at some point we might want to store state and input in a separate object (and the histories)
         self.u = np.zeros((2, 1))  # [acceleration, steering]
@@ -18,7 +20,7 @@ class Car:
 
         self.image = pygame.image.load("img/car-{0}.png".format(color))
 
-    def set_input(self, accelerate: float, steer: float):
+    def set_input(self, accelerate: float = 0., steer: float = 0.):
         """
         :param accelerate:
         :param steer:
@@ -27,18 +29,19 @@ class Car:
         self.u[0] = accelerate
         self.u[1] = steer
 
-    def tick(self, dt: float):
+    def tick(self):
         """
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics (e.g., as a CasADi function)
         :param dt:
         :return: car state
         """
-        self.x = self.dynamics.integrate(self.x, self.u)
+        x_next = self.dynamics.integrate(self.x, self.u)
+        self.x = x_next.full()  # casadi DM to np.array
 
     def draw(self, window, ppm):
         # coordinate transform to graphics coordinate frame
-        p = np.array([self.x[0], self.x[1]]) * ppm
+        p = self.x[0:2] * ppm
         p = coordinate_transform(p)
 
         img = pygame.transform.scale(self.image, (int(self.car_length * ppm), int(self.car_width * ppm)))
@@ -46,10 +49,47 @@ class Car:
 
         # calculate center position for drawing
         img_rect = img.get_rect()
-        img_rect.center = p
+        img_rect.center = (p[0, 0], p[1, 0])
 
         window.blit(img, img_rect)
-        # pygame.draw.rect(window, (0, 0, 255), pygame.Rect(p[0],p[1], img.get_rect()[2], img.get_rect()[3]), 2)
+
+
+class CarUserControlled(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'blue'):
+        super(CarUserControlled, self).__init__(p0, phi0, v0, dt, color)
+        self.accelerate = 0.
+        self.steer = 0.
+
+    def set_input(self, accelerate=0., steer=0.):
+        """
+        Crappy implementation of a simple keyboard controller
+        :param accelerate:
+        :param steer:
+        :return:
+        """
+        accelerate_sensitivity = 2  # [m/s2 / s]
+        decelerate_sensitivity = 3
+        steer_sensitivity = 1.5 * np.pi  # [rad/s]
+
+        keys = pygame.key.get_pressed()
+
+        if not keys[K_UP] or not keys[K_DOWN]:
+            self.accelerate = 0.
+        if keys[K_UP]:
+            self.accelerate += accelerate_sensitivity * self.dt
+        elif keys[K_DOWN]:
+            self.accelerate -= decelerate_sensitivity * self.dt
+        accelerate = min(max(self.accelerate, -4.), 2.)  # limit acceleration to [-4., 2.]
+
+        if not keys[K_LEFT] or not keys[K_RIGHT]:
+            self.steer = 0.
+        if keys[K_LEFT]:
+            self.steer += steer_sensitivity * self.dt
+        elif keys[K_RIGHT]:
+            self.steer -= steer_sensitivity * self.dt
+        steer = min(max(self.steer, -np.pi), np.pi)  # limit steer to [-pi, pi]
+
+        super().set_input(accelerate, steer)
 
 # class CarHardCoded(Car):
 #     def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
