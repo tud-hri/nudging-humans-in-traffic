@@ -1,33 +1,31 @@
 import numpy as np
+import pygame
 
-import carlo.agents
-from carlo.entities import Point
-from carlo.interactive_controllers import KeyboardController
 from dynamics import CarDynamics
+from utils import coordinate_transform
 
 
-class Car(carlo.agents.Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'red'):
-        super(Car, self).__init__(center, heading, color)
-        x0 = np.array([center.x, center.y, heading, 0.])  # initial condition
+class Car:
+    def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'red'):
+        x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
         self.dynamics = CarDynamics(dt, x0=x0)
         # self.trajectory = None # work in progress - at some point we might want to store state and input in a separate object (and the histories)
-        self.u_input = np.zeros((2, 1))  # [acceleration, steering]
-        self.x_state = x0  # [x, y, phi, v]
+        self.u = np.zeros((2, 1))  # [acceleration, steering]
+        self.x = x0  # [x, y, phi, v]
         self.world = None
+        self.car_width = 2.  # width of the car
+        self.car_length = self.dynamics.length
 
-    def set_control(self, inputSteering: float, inputAcceleration: float):
+        self.image = pygame.image.load("img/car-{0}.png".format(color))
+
+    def set_input(self, accelerate: float, steer: float):
         """
-        Override from CARLO: set self.u_input
-        :param inputSteering:
-        :param inputAcceleration:
+        :param accelerate:
+        :param steer:
         :return:
         """
-        self.inputSteering = inputSteering
-        self.inputAcceleration = inputAcceleration
-
-        self.u_input[0] = self.inputAcceleration
-        self.u_input[1] = self.inputSteering
+        self.u[0] = accelerate
+        self.u[1] = steer
 
     def tick(self, dt: float):
         """
@@ -36,48 +34,56 @@ class Car(carlo.agents.Car):
         :param dt:
         :return: car state
         """
-        x_next = self.dynamics.integrate(self.x_state, self.u_input)
-        self.x_state = x_next
+        self.x = self.dynamics.integrate(self.x, self.u)
 
-        # and convert state to Point for CARLO
-        self.center = Point(x_next[0], x_next[1])
-        self.heading = np.mod(x_next[2], 2 * np.pi)  # wrap the heading angle between 0 and +2pi
-        self.velocity = x_next[3]
+    def draw(self, window, ppm):
+        # coordinate transform to graphics coordinate frame
+        p = np.array([self.x[0], self.x[1]]) * ppm
+        p = coordinate_transform(p)
 
+        img = pygame.transform.scale(self.image, (int(self.car_length * ppm), int(self.car_width * ppm)))
+        img = pygame.transform.rotate(img, np.rad2deg(self.x[2]))
 
-class CarHardCoded(Car):
-    def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
-        super(CarHardCoded, self).__init__(center, heading, dt, color)
-        self.u = input
-        self.k = 0  # index / time step
+        # calculate center position for drawing
+        img_rect = img.get_rect()
+        img_rect.center = p
 
-    def set_control(self):
-        steer = self.u[0, self.k]
-        accelerate = self.u[1, self.k]
+        window.blit(img, img_rect)
+        # pygame.draw.rect(window, (0, 0, 255), pygame.Rect(p[0],p[1], img.get_rect()[2], img.get_rect()[3]), 2)
 
-        super().set_control(steer, accelerate)
-
-        self.k += 1
-
-
-class CarUserControlled(Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'blue'):
-        super(CarUserControlled, self).__init__(center, heading, dt, color)
-        self.controller = None
-
-    def set_control(self):
-        if self.controller is None:
-            self.controller = KeyboardController(self.world)
-
-        steer = min(max(self.controller.steering, -np.pi), np.pi)  # limit steer to [-pi, pi]
-        accelerate = min(max(self.controller.throttle, -4.), 2.)  # limit acceleration to [-4., 2.]
-
-        super().set_control(steer, accelerate)
-
-class CarEvidenceAccumulation(Car):
-    """
-    Car with Arkady's model
-    """
-
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'green'):
-        super(CarEvidenceAccumulation, self).__init__(center, heading, dt, color)
+# class CarHardCoded(Car):
+#     def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
+#         super(CarHardCoded, self).__init__(center, heading, dt, color)
+#         self.u = input
+#         self.k = 0  # index / time step
+#
+#     def set_control(self):
+#         steer = self.u[0, self.k]
+#         accelerate = self.u[1, self.k]
+#
+#         super().set_control(steer, accelerate)
+#
+#         self.k += 1
+#
+#
+# class CarUserControlled(Car):
+#     def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'blue'):
+#         super(CarUserControlled, self).__init__(center, heading, dt, color)
+#         self.controller = None
+#
+#     def set_control(self):
+#         if self.controller is None:
+#             self.controller = KeyboardController(self.world)
+#
+#         steer = min(max(self.controller.steering, -np.pi), np.pi)  # limit steer to [-pi, pi]
+#         accelerate = min(max(self.controller.throttle, -4.), 2.)  # limit acceleration to [-4., 2.]
+#
+#         super().set_control(steer, accelerate)
+#
+# class CarEvidenceAccumulation(Car):
+#     """
+#     Car with Arkady's model
+#     """
+#
+#     def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'green'):
+#         super(CarEvidenceAccumulation, self).__init__(center, heading, dt, color)

@@ -17,7 +17,8 @@ class CarDynamics:
     def __init__(self, dt: float, x0=None):
         """
         Create car dynamics using casadi
-        :param dt:
+        :param dt: simulation time step
+        :param x0: initial state
         """
         self.dt = dt
 
@@ -29,7 +30,8 @@ class CarDynamics:
             x0 = np.zeros(x.shape)
 
         # simple bicycle dynamics, see https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225830
-        lr = 2.  # assume a car is 4 meters; this should be a variable, really, but can't be bothered, hehe
+        self.length = 4. # assume a car is 4 meters; this should be a variable, really, but can't be bothered, hehe
+        lr = self.length / 2.
         lf = lr
         beta = atan(lr / (lf + lr) * tan(u[1]))
 
