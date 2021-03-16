@@ -98,9 +98,7 @@ class IntersectionWorld(carlo.world.World):
 
             if self.collision_exists():
                 print("Collision")
-                # import sys
-                # sys.exit(0)
 
             if self.play_in_rt:
                 self.render()  # only render if playing in RT mode
-                time.sleep(self.dt / 4.)
+                time.sleep(self.dt / 4)

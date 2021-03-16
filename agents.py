@@ -1,5 +1,5 @@
 import numpy as np
-from human_model import HumanModel
+from human_models import HumanModel
 
 import carlo.agents
 from carlo.entities import Point
@@ -8,14 +8,15 @@ from dynamics import CarDynamics
 
 
 class Car(carlo.agents.Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'red'):
+    def __init__(self, world, center: Point, heading: float, dt: float, color: str = 'red'):
         super(Car, self).__init__(center, heading, color)
         x0 = np.array([center.x, center.y, heading, 0.])  # initial condition
         self.dynamics = CarDynamics(dt, x0=x0)
-        # self.trajectory = None # work in progress - at some point we might want to store state and input in a separate object (and the histories)
+        # work in progress:at some point we might want to store state and input in a separate object (and the histories)
+        # self.trajectory = None
         self.u_input = np.zeros((2, 1))  # [acceleration, steering]
         self.x_state = x0  # [x, y, phi, v]
-        self.world = None
+        self.world = world
 
     def set_control(self, inputSteering: float, inputAcceleration: float):
         """
@@ -24,16 +25,14 @@ class Car(carlo.agents.Car):
         :param inputAcceleration:
         :return:
         """
-        self.inputSteering = inputSteering
-        self.inputAcceleration = inputAcceleration
-
-        self.u_input[0] = self.inputAcceleration
-        self.u_input[1] = self.inputSteering
+        self.u_input[0] = inputAcceleration
+        self.u_input[1] = inputSteering
 
     def tick(self, dt: float):
         """
         Perform one integration step of the dynamics
-        This is an override of the Entity.tick function, to enable us to define our own dynamics (e.g., as a CasADi function)
+        This is an override of the Entity.tick function, to enable us to define our own dynamics
+        (e.g., as a CasADi function)
         :param dt:
         :return: car state
         """
@@ -47,9 +46,9 @@ class Car(carlo.agents.Car):
 
 
 class CarHardCoded(Car):
-    def __init__(self, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
-        super(CarHardCoded, self).__init__(center, heading, dt, color)
-        self.u = input
+    def __init__(self, world, center: Point, heading: float, control_input, dt: float, color: str = 'red'):
+        super(CarHardCoded, self).__init__(world, center, heading, dt, color)
+        self.u = control_input
         self.k = 0  # index / time step
 
     def set_control(self):
@@ -62,8 +61,8 @@ class CarHardCoded(Car):
 
 
 class CarUserControlled(Car):
-    def __init__(self, center: Point, heading: float, dt: float = 0.1, color: str = 'blue'):
-        super(CarUserControlled, self).__init__(center, heading, dt, color)
+    def __init__(self, world, center: Point, heading: float, dt: float, color: str = 'blue'):
+        super(CarUserControlled, self).__init__(world, center, heading, dt, color)
         self.controller = None
 
     def set_control(self):
@@ -77,22 +76,37 @@ class CarUserControlled(Car):
 
 
 class CarSimulatedHuman(Car):
-    def __init__(self, human_model: HumanModel, center: Point, heading: float, input, dt: float = 0.1, color: str = 'red'):
-        super(CarSimulatedHuman, self).__init__(center, heading, dt, color)
-        #
-        # u = np.zeros((2, world.time_vector.shape[0]))
-        # idx = random.randint(5, 10)
-        # u[0, idx + int(5 / dt):idx + int(11 / dt)] = 0.455
-        # u[1, idx + int(3 / dt):idx + int(12 / dt)] = 0.5
-
-        self.u = input
-        self.k = 0  # index / time step
+    def __init__(self, world, human_model: HumanModel, center: Point, heading: float, dt: float, color: str):
+        super(CarSimulatedHuman, self).__init__(world, center, heading, dt, color)
         self.human_model = human_model
+        self.steer = 0.43  # in radian
+        self.acceleration = 3  # in m/s^2
+        self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
+        self.dt = dt
+        # fixme: might not be the best idea to keep track of time inside the Car object
+        self.time_elapsed = 0
+        self.k = 0  # index / time step
+
+        self.decision = None
+        self.t_decision = None
+        self.is_turn_completed = False
 
     def set_control(self):
-        steer = self.u[0, self.k]
-        accelerate = self.u[1, self.k]
+        # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
+        if self.decision is None:
+            print("The simulated human is thinking...")
+            centers = [agent.center for agent in self.world.dynamic_agents]
+            distance_gap = np.sqrt((centers[0].x - centers[1].x)**2 + (centers[0].y - centers[1].y)**2)
+            self.decision = self.human_model.get_decision(distance_gap, self.time_elapsed)
+            if (self.decision == "turn") | (self.decision == "wait"):
+                print("The simulated human has decided to %s" % self.decision)
+                self.t_decision = self.time_elapsed
+                print("Response time %.2fs" % self.t_decision)
 
-        super().set_control(steer, accelerate)
+        if self.decision == "turn":
+            super().set_control(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
+            if self.time_elapsed > self.t_decision + self.turning_time:
+                self.is_turn_completed = True
 
-        self.k += 1
+        # fixme: also might not be a good way of keeping track of time...
+        self.time_elapsed += self.dt
