@@ -13,12 +13,13 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
     - [x] ~Add refs~
 - [x] ~Create Github repo - Niek - 02/03~
 - [ ] Create a test-driven development environment - Arkady, Niek
-    - [ ] Discuss whether CARLO is the way to go - we're overriding more and more of their code
+    - [ ] Merge pygame into main (first merge main into pygame)
+    - [x] ~Discuss whether CARLO is the way to go - we're overriding more and more of their code~
     - [x] ~Create simulation setup based on CARLO - Niek~ 
-    - [ ] Refactor simulation setup - Arkady 09/03
+    - [x] ~Refactor simulation setup - Arkady 09/03~
     - [x] ~Write down testing scenarios - Arkady 02/03~
-    - [ ] Implement testing scenarios - Arkady
-        - [ ] Implement simulated human - Arkady 09/03
+    - [x] ~Implement testing scenarios - Arkady~
+        - [x] ~Implement simulated human - Arkady 09/03~
     - [x] ~Measures - Arkady 02/03~
     - [x] ~Validation criteria~
 - [x] ~Decide on reference controller implementation - Niek~
@@ -29,7 +30,13 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [ ] Prototype simple path planner in casadi - Niek 09/03
     - [x] ~implement car dynamics using CasADi - Niek~
     - [ ] implement simple MPC for AV - Niek 12/03
+    - [ ] time step for integrator as parameter - Niek
+    - [ ] implement boundary (static constraint)
     - [ ] implement safe-trajectory MPC - Niek 19/03
+    - [ ] Implement trajectory object for cars - Niek 
+- [ ] Include cognitive model prediction into MPC - Arkady
+    - [ ] Write down the high-level algorithm for incorporating model predictions into cost function
+    - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
