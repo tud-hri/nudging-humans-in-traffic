@@ -92,9 +92,9 @@ class CarUserControlled(Car):
         super().set_input(accelerate, steer)
 
 
-class CarSimpleOptimizer(Car):
+class CarSimpleMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., dt: float = 0.1, color: str = 'yellow'):
-        super(CarSimpleOptimizer, self).__init__(p0, phi0, v0, dt, color)
+        super(CarSimpleMPC, self).__init__(p0, phi0, v0, dt, color)
         self.th = 2.  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
