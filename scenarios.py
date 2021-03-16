@@ -1,11 +1,11 @@
 import numpy as np
-import random
+
 import agents
-from carlo.entities import Point
 import human_models
+from intersection_world import IntersectionWorld
 
 
-def scenario1(world, dt):
+def scenario1(world: IntersectionWorld):
     """
     Scenario 1
     Straight intersection, two approaching cars, ego vehicle turns left, automated vehicle goes straight
@@ -23,14 +23,7 @@ def scenario1(world, dt):
     #                                            world.p_intersection.y - 2 * world.lane_width / 2. - 3.),
     #                               heading=np.pi / 2., control_input=u, color='blue')
 
-    # User-controlled car
-    # car_human = agents.CarUserControlled(world=world, center=Point(world.p_intersection.x + 2 * world.lane_width / 4.,
-    #                                                              world.p_intersection.y - 2 * world.lane_width / 2. - 3.),
-    #                                    heading=np.pi / 2., color='yellow')
-
-
-    # Simulated human car
-
+    # simulated human car
     human_model = human_models.HumanModelDelayedThreshold(critical_gap=20,
                                                           noise_intensity=10,
                                                           delay_mean=0.8,
@@ -40,32 +33,14 @@ def scenario1(world, dt):
                                                               boundary=2,
                                                               drift_rate=2,
                                                               diffusion_rate=1,
-                                                              dt=dt)
+                                                              dt=world.dt)
 
-    car_human = agents.CarSimulatedHuman(world=world, human_model=human_model,
-                                         center=Point(world.p_intersection.x + 2 * world.lane_width / 4.,
-                                                      world.p_intersection.y - 2 * world.lane_width / 2. - 3.),
-                                         heading=np.pi / 2., color='black', dt=dt)
-    world.add(car_human)
+    car_human = agents.CarSimulatedHuman(p0=[40., 25.], phi0=np.pi / 2., world=world, human_model=human_model, dt=world.dt, color='red')
+    world.agents.update({'human': car_human})
 
     # add AV (hardcoded inputs)
-    u = np.zeros((2, world.time_vector.shape[0]))
-    u[1, 0:int(1 / dt)] = 6
-    u[1, int(1 / dt):-1] = 0.05  # just a little bit of acceleration to negate friction
-    car_av = agents.CarHardCoded(world=world,
-                                 center=Point(world.p_intersection.x - 2 * world.lane_width / 4., world.height - 25.),
-                                 heading=- np.pi / 2., control_input=u, dt=dt)
-    world.add(car_av)
-
-    # render, just to get to see our work come to life
-    world.render()
-
-    # @Arkady - my attempt, but this is suboptimal, want to use a @setter for this ideally
-    # giving the cars 'world' as a paremeter doesn't seem to work for the usercontrolled car.
-    # car_ego.world = world
-    # car_av.world = world
-
-    # @ Niek: hmm not sure, I added world to the constructors, seems to work for now
-    # But still seems suboptimal, something to think through later
-
-    world.run()
+    # u = np.zeros((2, world.time_vector.shape[0]))
+    # u[1, 0:int(1 / world.dt)] = 6
+    # u[1, int(1 / world.dt):-1] = 0.05  # just a little bit of acceleration to compensate for friction
+    car_av = agents.CarSimpleMPC(p0=[37., 95.], phi0=-np.pi / 2., world=world, dt=world.dt, color='yellow')
+    world.agents.update({'av': car_av})

@@ -1,34 +1,36 @@
-import numpy as np
-from human_models import HumanModel
+import pygame
+from casadi import *
+from pygame.locals import *
 
-import carlo.agents
-from carlo.entities import Point
-from carlo.interactive_controllers import KeyboardController
 from dynamics import CarDynamics
+from human_models import HumanModel
+from utils import coordinate_transform
 
 
-class Car(carlo.agents.Car):
-    def __init__(self, world, center: Point, heading: float, dt: float, color: str = 'red'):
-        super(Car, self).__init__(center, heading, color)
-        x0 = np.array([center.x, center.y, heading, 0.])  # initial condition
+class Car:
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'red'):
+        x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
+        self.dt = dt
         self.dynamics = CarDynamics(dt, x0=x0)
-        # work in progress:at some point we might want to store state and input in a separate object (and the histories)
-        # self.trajectory = None
-        self.u_input = np.zeros((2, 1))  # [acceleration, steering]
-        self.x_state = x0  # [x, y, phi, v]
+        # self.trajectory = None # fixme work in progress - at some point we might want to store state and input in a separate object (and the histories)
+        self.u = np.zeros((2, 1))  # [acceleration, steering]
+        self.x = x0  # [x, y, phi, v]
         self.world = world
+        self.car_width = 2.  # width of the car
+        self.car_length = self.dynamics.length
 
-    def set_control(self, inputSteering: float, inputAcceleration: float):
+        self.image = pygame.image.load("img/car-{0}.png".format(color))
+
+    def set_input(self, accelerate: float = 0., steer: float = 0.):
         """
-        Override from CARLO: set self.u_input
-        :param inputSteering:
-        :param inputAcceleration:
+        :param accelerate:
+        :param steer:
         :return:
         """
-        self.u_input[0] = inputAcceleration
-        self.u_input[1] = inputSteering
+        self.u[0] = accelerate
+        self.u[1] = steer
 
-    def tick(self, dt: float):
+    def tick(self):
         """
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics
@@ -36,53 +38,79 @@ class Car(carlo.agents.Car):
         :param dt:
         :return: car state
         """
-        x_next = self.dynamics.integrate(self.x_state, self.u_input)
-        self.x_state = x_next
+        x_next = self.dynamics.integrate(self.x, self.u)
+        self.x = x_next.full()  # casadi DM to np.array
 
-        # and convert state to Point for CARLO
-        self.center = Point(x_next[0], x_next[1])
-        self.heading = np.mod(x_next[2], 2 * np.pi)  # wrap the heading angle between 0 and +2pi
-        self.velocity = x_next[3]
+    def draw(self, window, ppm):
+        # coordinate transform to graphics coordinate frame
+        p = self.x[0:2] * ppm
+        p = coordinate_transform(p)
 
+        img = pygame.transform.scale(self.image, (int(self.car_length * ppm), int(self.car_width * ppm)))
+        img = pygame.transform.rotate(img, np.rad2deg(self.x[2]))
 
-class CarHardCoded(Car):
-    def __init__(self, world, center: Point, heading: float, control_input, dt: float, color: str = 'red'):
-        super(CarHardCoded, self).__init__(world, center, heading, dt, color)
-        self.u = control_input
-        self.k = 0  # index / time step
+        # calculate center position for drawing
+        img_rect = img.get_rect()
+        img_rect.center = (p[0, 0], p[1, 0])
 
-    def set_control(self):
-        steer = self.u[0, self.k]
-        accelerate = self.u[1, self.k]
+        window.blit(img, img_rect)
 
-        super().set_control(steer, accelerate)
-
-        self.k += 1
+    @property
+    def position(self):
+        return self.x[0:2]
 
 
 class CarUserControlled(Car):
-    def __init__(self, world, center: Point, heading: float, dt: float, color: str = 'blue'):
-        super(CarUserControlled, self).__init__(world, center, heading, dt, color)
-        self.controller = None
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'blue'):
+        super(CarUserControlled, self).__init__(p0, phi0, v0, world, dt, color)
+        self.accelerate_int = 0.
+        self.steer_int = 0.
 
-    def set_control(self):
-        if self.controller is None:
-            self.controller = KeyboardController(self.world)
+    def set_input(self, accelerate=0., steer=0.):
+        """
+        Crappy implementation of a simple keyboard controller
+        :param accelerate:
+        :param steer:
+        :return:
+        """
+        accelerate_sensitivity = 2  # [m/s2 / s]
+        decelerate_sensitivity = 3
+        steer_sensitivity = 1.5 * np.pi  # [rad/s]
 
-        steer = min(max(self.controller.steering, -np.pi), np.pi)  # limit steer to [-pi, pi]
-        accelerate = min(max(self.controller.throttle, -4.), 2.)  # limit acceleration to [-4., 2.]
+        keys = pygame.key.get_pressed()
 
-        super().set_control(steer, accelerate)
+        if not keys[K_UP] or not keys[K_DOWN]:
+            self.accelerate_int = 0.
+        if keys[K_UP]:
+            self.accelerate_int += accelerate_sensitivity * self.dt
+        elif keys[K_DOWN]:
+            self.accelerate_int -= decelerate_sensitivity * self.dt
+        accelerate = min(max(self.accelerate_int, -4.), 2.)  # limit acceleration to [-4., 2.]
+
+        if not keys[K_LEFT] or not keys[K_RIGHT]:
+            self.steer_int = 0.
+        if keys[K_LEFT]:
+            self.steer_int += steer_sensitivity * self.dt
+        elif keys[K_RIGHT]:
+            self.steer_int -= steer_sensitivity * self.dt
+        steer = min(max(self.steer_int, -np.pi), np.pi)  # limit steer to [-pi, pi]
+
+        super().set_input(accelerate, steer)
+
+
+class CarHardCoded(Car):
+    pass
+    # fixme needs to be implemented still.
 
 
 class CarSimulatedHuman(Car):
-    def __init__(self, world, human_model: HumanModel, center: Point, heading: float, dt: float, color: str):
-        super(CarSimulatedHuman, self).__init__(world, center, heading, dt, color)
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, dt: float = 0.1, color: str = 'red'):
+        super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, dt, color)
         self.human_model = human_model
         self.steer = 0.43  # in radian
-        self.acceleration = 3  # in m/s^2
+        self.acceleration = 6  # in m/s^2
         self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
-        self.dt = dt
+
         # fixme: might not be the best idea to keep track of time inside the Car object
         self.time_elapsed = 0
         self.k = 0  # index / time step
@@ -91,12 +119,12 @@ class CarSimulatedHuman(Car):
         self.t_decision = None
         self.is_turn_completed = False
 
-    def set_control(self):
+    def set_input(self):
         # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
         if self.decision is None:
             print("The simulated human is thinking...")
-            centers = [agent.center for agent in self.world.dynamic_agents]
-            distance_gap = np.sqrt((centers[0].x - centers[1].x)**2 + (centers[0].y - centers[1].y)**2)
+            centers = [agent.position for agent in self.world.agents.values()]
+            distance_gap = np.sqrt((centers[0][0] - centers[1][0]) ** 2 + (centers[0][1] - centers[1][1]) ** 2)
             self.decision = self.human_model.get_decision(distance_gap, self.time_elapsed)
             if (self.decision == "turn") | (self.decision == "wait"):
                 print("The simulated human has decided to %s" % self.decision)
@@ -104,9 +132,60 @@ class CarSimulatedHuman(Car):
                 print("Response time %.2fs" % self.t_decision)
 
         if self.decision == "turn":
-            super().set_control(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
+            super().set_input(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
             if self.time_elapsed > self.t_decision + self.turning_time:
                 self.is_turn_completed = True
 
         # fixme: also might not be a good way of keeping track of time...
         self.time_elapsed += self.dt
+
+
+class CarSimpleMPC(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
+        super(CarSimpleMPC, self).__init__(p0, phi0, v0, world, dt, color)
+        self.th = 2.  # time horizon (2 seconds)
+        self.Nh = round(self.th / self.dt)  # number of steps in time horizon
+
+        # desired state
+        self.x_target = np.array([[p0[0]],
+                                  [0.],
+                                  [-np.pi / 2.],
+                                  [50. / 3.6]])
+
+        # setup the optimizer through CasADi
+        nx = self.x.shape[0]
+        self.opti = casadi.Opti()
+        self.x_opti = self.opti.variable(nx, self.Nh + 1)
+        self.u_opti = self.opti.variable(2, self.Nh)
+        self.p_opti = self.opti.parameter(nx, 1)
+
+        # set objective
+        q = np.diag([.5, 1e-6, 0.05, .5])
+        dx = self.x_target - self.x_opti
+        self.opti.minimize(sumsqr(q @ dx) + sumsqr(self.u_opti))
+
+        for k in range(0, self.Nh):
+            self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
+
+        self.opti.subject_to(self.opti.bounded(-10, self.u_opti[0], 10))
+        self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1], np.pi / 2.))
+        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 50. / 3.6))
+        self.opti.subject_to(self.x_opti[:, 0] == self.x)
+
+        # setup solver
+        p_opts = {"expand": True}
+        s_opts = {"max_iter": 1000, 'print_level': 0}
+        self.opti.solver('ipopt', p_opts, s_opts)
+
+    def set_input(self, accelerate=0., steer=0.):
+        # set current state of initial condition
+        self.opti.set_value(self.p_opti, self.x)
+
+        # solve the problem!
+        sol = self.opti.solve()
+        # fixme the solver does not seem to adhere to the constraints... What are we doing wrong?
+        # select the first index for the control input
+        accelerate = sol.value(self.u_opti)[0, 0]
+        steer = sol.value(self.u_opti)[1, 0]
+
+        super().set_input(accelerate, steer)
