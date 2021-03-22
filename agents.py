@@ -22,16 +22,10 @@ class Car:
 
         self.image = pygame.image.load("img/car-{0}.png".format(self.color))
 
-    def set_input(self, accelerate: float = 0., steer: float = 0.):
-        """
-        :param accelerate:
-        :param steer:
-        :return:
-        """
-        self.u[0] = accelerate
-        self.u[1] = steer
+    def calculate_action(self, sim_time: float):
+        pass
 
-    def tick(self):
+    def tick(self, sim_time: float):
         """
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics
@@ -80,7 +74,7 @@ class CarUserControlled(Car):
         self.accelerate_int = 0.
         self.steer_int = 0.
 
-    def set_input(self, accelerate=0., steer=0.):
+    def calculate_action(self, sim_time: float):
         """
         Crappy implementation of a simple keyboard controller
         :param accelerate:
@@ -109,49 +103,8 @@ class CarUserControlled(Car):
             self.steer_int -= steer_sensitivity * self.dt
         steer = min(max(self.steer_int, -np.pi), np.pi)  # limit steer to [-pi, pi]
 
-        super().set_input(accelerate, steer)
-
-
-class CarHardCoded(Car):
-    pass
-    # fixme needs to be implemented still.
-
-
-class CarSimulatedHuman(Car):
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, dt: float = 0.1, color: str = 'red'):
-        super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, dt, color)
-        self.human_model = human_model
-        self.steer = 0.43  # in radian
-        self.acceleration = 6  # in m/s^2
-        self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
-
-        # fixme: might not be the best idea to keep track of time inside the Car object
-        self.time_elapsed = 0
-        self.k = 0  # index / time step
-
-        self.decision = None
-        self.t_decision = None
-        self.is_turn_completed = False
-
-    def set_input(self):
-        # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
-        if self.decision is None:
-            print("The simulated human is thinking...")
-            centers = [agent.position for agent in self.world.agents.values()]
-            distance_gap = np.sqrt((centers[0][0] - centers[1][0]) ** 2 + (centers[0][1] - centers[1][1]) ** 2)
-            self.decision = self.human_model.get_decision(distance_gap, self.time_elapsed)
-            if (self.decision == "turn") | (self.decision == "wait"):
-                print("The simulated human has decided to %s" % self.decision)
-                self.t_decision = self.time_elapsed
-                print("Response time %.2fs" % self.t_decision)
-
-        if self.decision == "turn":
-            super().set_input(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
-            if self.time_elapsed > self.t_decision + self.turning_time:
-                self.is_turn_completed = True
-
-        # fixme: also might not be a good way of keeping track of time...
-        self.time_elapsed += self.dt
+        self.u[0] = accelerate
+        self.u[1] = steer
 
 
 class CarSimpleMPC(Car):
@@ -174,9 +127,9 @@ class CarSimpleMPC(Car):
         self.p_opti = self.opti.parameter(nx, 1)
 
         # set objective
-        q = np.diag([.5, 1e-6, 0.05, 1.])
+        self.q_matrix = np.diag([.5, 1e-6, 0.05, 1.])
         dx = self.x_target - self.x_opti
-        self.opti.minimize(sumsqr(q @ dx) + sumsqr(self.u_opti))
+        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
 
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
@@ -191,15 +144,64 @@ class CarSimpleMPC(Car):
         s_opts = {'max_iter': 1e5, 'print_level': 0}
         self.opti.solver('ipopt', p_opts, s_opts)
 
-    def set_input(self, accelerate=0., steer=0.):
+    def solve_optim(self):
         # set current state of initial condition
         self.opti.set_value(self.p_opti, self.x)
 
         # solve the problem!
         sol = self.opti.solve()
-        # fixme the solver does not seem to adhere to the constraints... What are we doing wrong?
+
         # select the first index for the control input
         accelerate = sol.value(self.u_opti)[0, 0]
         steer = sol.value(self.u_opti)[1, 0]
 
-        super().set_input(accelerate, steer)
+        return accelerate, steer
+
+    def calculate_action(self, sim_time: float):
+        accelerate, steer = self.solve_optim()
+
+        self.u[0] = accelerate
+        self.u[1] = steer
+
+
+class CarSimulatedHuman(CarSimpleMPC):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, dt: float = 0.1, color: str = 'red'):
+        super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, dt, color)
+        self.human_model = human_model
+        self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
+
+        # MPC setup
+        # desired state
+        self.x_target = np.array([[0.],
+                                  [30.],
+                                  [np.pi],
+                                  [50. / 3.6]])
+        # set objective
+        self.q_matrix = np.diag([1e-6, 2., 4., 2.])
+        dx = self.x_target - self.x_opti
+        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
+
+        self.decision = None
+        self.t_decision = None
+        self.is_turn_completed = False
+
+    def calculate_action(self, sim_time: float):
+        # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
+        if self.decision is None:
+            print("The simulated human is thinking...")
+            centers = [agent.position for agent in self.world.agents.values()]
+            distance_gap = np.sqrt((centers[0][0] - centers[1][0]) ** 2 + (centers[0][1] - centers[1][1]) ** 2)
+            self.decision = self.human_model.get_decision(distance_gap, sim_time)
+            if (self.decision == "turn") | (self.decision == "wait"):
+                print("The simulated human has decided to %s" % self.decision)
+                self.t_decision = sim_time
+                print("Response time %.2fs" % self.t_decision)
+
+        if self.decision == "turn":
+            super().calculate_action(sim_time)  # let MPC set the input for the car
+            if self.x[0] < 20.:
+                self.is_turn_completed = True
+
+            # super().set_input(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
+            # if self.time_elapsed > self.t_decision + self.turning_time:
+            #     self.is_turn_completed = True

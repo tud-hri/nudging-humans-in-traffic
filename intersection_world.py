@@ -23,14 +23,14 @@ class IntersectionWorld:
         self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
         self.lanes.append(HLane([0., 30.], [40., 30.], 3.))
 
-    def tick(self):
+    def tick(self, sim_time: float):
         # find action
         for _, agent in self.agents.items():
-            agent.set_input()
+            agent.calculate_action(sim_time)
 
         # apply action, integrate
         for _, agent, in self.agents.items():
-            agent.tick()
+            agent.tick(sim_time)
 
     def draw(self, window, ppm):
         window.fill((33, 138, 33))

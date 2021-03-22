@@ -36,7 +36,7 @@ class Simulator:
                 self.clock.tick(round(1. / self.dt))  # realtime, so wait a bit for the next tick/frame
 
             # do all the functional stuff here
-            self.world.tick()
+            self.world.tick(self.t[counter])
 
             # time keeping
 
