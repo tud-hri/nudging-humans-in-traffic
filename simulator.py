@@ -24,8 +24,6 @@ class Simulator:
         self.window.fill((33, 138, 33))  # green background
         pygame.display.flip()
 
-        self.font_state = pygame.font.SysFont("verdana", 12)
-
     def run(self):
         running = True
         t0 = pygame.time.get_ticks()
@@ -46,9 +44,16 @@ class Simulator:
             self.world.draw(self.window, self.ppm)
 
             # simulator state
-            sim_state_text = "t_sim: {:.2f}".format(self.t[counter])
-            text = self.font_state.render(sim_state_text, True, (0, 0, 0))
-            self.window.blit(text, text.get_rect(left=5, bottom=self.window.get_height() - 5))  # center=self.window.get_rect().center
+            sim_state_text = ["t_real: {:.2f}".format(t_elapsed),
+                              "t_sim: {:.2f}".format(self.t[counter])]
+
+            pos = (5, self.window.get_height() - 5)
+            font = pygame.font.SysFont("verdana", 12)
+            for txt in sim_state_text:
+                txt_surface = font.render(txt, True, (0, 0, 0))
+                p = txt_surface.get_rect(left=pos[0], bottom=pos[1])
+                self.window.blit(txt_surface, p)
+                pos = (pos[0], p.top)
 
             pygame.display.flip()
 
