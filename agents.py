@@ -157,7 +157,7 @@ class CarSimulatedHuman(Car):
 class CarSimpleMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
         super(CarSimpleMPC, self).__init__(p0, phi0, v0, world, dt, color)
-        self.th = 2.  # time horizon (2 seconds)
+        self.th = 1.  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
         # desired state
@@ -174,17 +174,17 @@ class CarSimpleMPC(Car):
         self.p_opti = self.opti.parameter(nx, 1)
 
         # set objective
-        q = np.diag([.5, 1e-6, 0.05, .5])
+        q = np.diag([.5, 1e-6, 0.05, 1.])
         dx = self.x_target - self.x_opti
         self.opti.minimize(sumsqr(q @ dx) + sumsqr(self.u_opti))
 
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
-        self.opti.subject_to(self.opti.bounded(-10, self.u_opti[0], 10))
-        self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1], np.pi / 2.))
-        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 50. / 3.6))
-        self.opti.subject_to(self.x_opti[:, 0] == self.x)
+        self.opti.subject_to(self.opti.bounded(-20, self.u_opti[0, :], 20))
+        self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1, :], np.pi / 2.))
+        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 100. / 3.6))
+        self.opti.subject_to(self.x_opti[:, 0] == self.p_opti)
 
         # setup solver
         p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
