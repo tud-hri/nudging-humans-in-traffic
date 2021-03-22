@@ -5,6 +5,7 @@ from pygame.locals import *
 from dynamics import CarDynamics
 from human_models import HumanModel
 from utils import coordinate_transform
+from trajectory import Trajectory
 
 
 class Car:
@@ -12,9 +13,9 @@ class Car:
         x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
         self.dt = dt
         self.dynamics = CarDynamics(dt, x0=x0)
-        # self.trajectory = None # fixme work in progress - at some point we might want to store state and input in a separate object (and the histories)
         self.u = np.zeros((2, 1))  # [acceleration, steering]
         self.x = x0  # [x, y, phi, v]
+        self.trajectory = Trajectory(x0, self.u)
         self.world = world
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
@@ -35,6 +36,9 @@ class Car:
         """
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
+
+        # add new state and input to trajectory
+        self.trajectory.append(sim_time, self.x, self.u)
 
     def draw(self, window, ppm):
         # coordinate transform to graphics coordinate frame

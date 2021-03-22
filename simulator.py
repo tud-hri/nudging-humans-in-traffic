@@ -48,7 +48,7 @@ class Simulator:
             # simulator state
             sim_state_text = "t_sim: {:.2f}".format(self.t[counter])
             text = self.font_state.render(sim_state_text, True, (0, 0, 0))
-            self.window.blit(text, text.get_rect(left=5, bottom=self.window.get_height()-5))  # center=self.window.get_rect().center
+            self.window.blit(text, text.get_rect(left=5, bottom=self.window.get_height() - 5))  # center=self.window.get_rect().center
 
             pygame.display.flip()
 
