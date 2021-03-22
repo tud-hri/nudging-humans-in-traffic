@@ -24,6 +24,8 @@ class Simulator:
         self.window.fill((33, 138, 33))  # green background
         pygame.display.flip()
 
+        self.font_state = pygame.font.SysFont("verdana", 12)
+
     def run(self):
         running = True
         t0 = pygame.time.get_ticks()
@@ -36,14 +38,21 @@ class Simulator:
             # do all the functional stuff here
             self.world.tick()
 
+            # time keeping
+
+            t_elapsed = (pygame.time.get_ticks() - t0) * 1e-3
+
             # draw the world
-            self.window.fill((33, 138, 33))
             self.world.draw(self.window, self.ppm)
+
+            # simulator state
+            sim_state_text = "t_sim: {:.2f}".format(self.t[counter])
+            text = self.font_state.render(sim_state_text, True, (0, 0, 0))
+            self.window.blit(text, text.get_rect(left=5, bottom=self.window.get_height()-5))  # center=self.window.get_rect().center
+
             pygame.display.flip()
 
-            # time keeping
             counter += 1
-            t_elapsed = (pygame.time.get_ticks() - t0) * 1e-3
 
             if self.dt * counter >= self.T:
                 running = False

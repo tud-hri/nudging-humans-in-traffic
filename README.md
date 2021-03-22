@@ -40,6 +40,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
+- [ ] Add text rendering to simulator for basic info - Niek
 
 ## Run
 

@@ -18,8 +18,9 @@ class Car:
         self.world = world
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
+        self.color = color
 
-        self.image = pygame.image.load("img/car-{0}.png".format(color))
+        self.image = pygame.image.load("img/car-{0}.png".format(self.color))
 
     def set_input(self, accelerate: float = 0., steer: float = 0.):
         """
@@ -55,9 +56,22 @@ class Car:
 
         window.blit(img, img_rect)
 
+    def __str__(self):
+        return "state: {}".format(self.x.T)
+
+    def text_state_render(self):
+        font = pygame.font.SysFont("verdana", 12)
+        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f}; u_a: {4: .2f}, u_phi: {5: .2f}".format(self.x[0, 0], self.x[1, 0], self.x[2, 0],
+                                                                                                            self.x[3, 0], self.u[0, 0], self.u[1, 0])  #
+        return font.render(text, True, self.color)
+
     @property
     def position(self):
         return self.x[0:2]
+
+    @property
+    def velocity(self):
+        return self.x[3]
 
 
 class CarUserControlled(Car):
@@ -173,8 +187,8 @@ class CarSimpleMPC(Car):
         self.opti.subject_to(self.x_opti[:, 0] == self.x)
 
         # setup solver
-        p_opts = {"expand": True}
-        s_opts = {"max_iter": 1000, 'print_level': 0}
+        p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
+        s_opts = {'max_iter': 1e5, 'print_level': 0}
         self.opti.solver('ipopt', p_opts, s_opts)
 
     def set_input(self, accelerate=0., steer=0.):
