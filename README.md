@@ -15,7 +15,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
     - [ ] time step for integrator as parameter - Niek
     - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
     - [ ] Look into speeding up casadi
-    - [ ] Draw the planned trajectory
+    
 - [ ] Include cognitive model prediction into MPC - Arkady
     - [ ] Write down the MPC's cost as a function of x and u
     - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
@@ -24,6 +24,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 ## Doing
 
 - [ ] Add simple obstacle avoidance to the MPC cost function - Niek
+- [x] ~Draw the planned trajectory - Niek~
 
 ## Done
 

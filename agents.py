@@ -4,8 +4,8 @@ from pygame.locals import *
 
 from dynamics import CarDynamics
 from human_models import HumanModel
-from utils import coordinate_transform
 from trajectory import Trajectory
+from utils import coordinate_transform
 
 
 class Car:
@@ -130,6 +130,8 @@ class CarSimpleMPC(Car):
         self.u_opti = self.opti.variable(2, self.Nh)
         self.p_opti = self.opti.parameter(nx, 1)
 
+        self.x_mpc = np.zeros((nx, 1))
+
         # set objective
         self.q_matrix = np.diag([.5, 1e-6, 0.05, 1.])
         dx = self.x_target - self.x_opti
@@ -158,6 +160,7 @@ class CarSimpleMPC(Car):
         # select the first index for the control input
         accelerate = sol.value(self.u_opti)[0, 0]
         steer = sol.value(self.u_opti)[1, 0]
+        self.x_mpc = sol.value(self.x_opti)
 
         return accelerate, steer
 
@@ -166,6 +169,14 @@ class CarSimpleMPC(Car):
 
         self.u[0] = accelerate
         self.u[1] = steer
+
+    def draw(self, window, ppm):
+        super().draw(window, ppm)
+
+        # show planned path (convert from m to pixels, and then coordinate transform)
+        p = self.x_mpc[0:2, :] * ppm
+        if p.shape[1] > 1:
+            pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x)) for x in p.T.tolist()])
 
 
 class CarSimulatedHuman(CarSimpleMPC):
