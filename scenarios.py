@@ -42,5 +42,5 @@ def scenario1(world: IntersectionWorld):
     # u = np.zeros((2, world.time_vector.shape[0]))
     # u[1, 0:int(1 / world.dt)] = 6
     # u[1, int(1 / world.dt):-1] = 0.05  # just a little bit of acceleration to compensate for friction
-    car_av = agents.CarSimpleMPC(p0=[37., 95.], phi0=-np.pi / 2., world=world, dt=world.dt, color='yellow')
+    car_av = agents.CarSimpleMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=50/3.6, world=world, dt=world.dt, color='yellow')
     world.agents.update({'av': car_av})

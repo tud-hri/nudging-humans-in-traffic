@@ -19,9 +19,13 @@ class IntersectionWorld:
         self.create_intersection()
 
     def create_intersection(self):
+
+        # lanes
+        self.lanes.append(HLane([0., 30.], [40., 30.], 3.))
+        self.lanes.append(HLane([0., 27.], [40., 27.], 3.))
         self.lanes.append(VLane([40., 0.], [40., 120.], 3.))
         self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
-        self.lanes.append(HLane([0., 30.], [40., 30.], 3.))
+
 
     def tick(self, sim_time: float):
         # find action
@@ -47,5 +51,4 @@ class IntersectionWorld:
         pos = (5, 5)
         for txt in state_text:
             window.blit(txt, txt.get_rect(left=pos[0], top=pos[1]))
-            pos = (pos[0], txt.get_rect().bottom + 0.25*txt.get_height())
-
+            pos = (pos[0], txt.get_rect().bottom + 0.25 * txt.get_height())

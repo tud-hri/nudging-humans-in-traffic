@@ -53,8 +53,14 @@ class HLane(Lane):
         x = min(p0[0], p1[0])
         y = min(p0[1], p1[1]) - width / 2.
         length = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
+        rect = pygame.Rect(x, y, length, width)
 
-        pygame.draw.rect(window, self.color, pygame.Rect(x, y, length, width))
+        pygame.draw.rect(window, self.color, rect)
+
+        # draw road lines
+        line_color = (240, 240, 240)
+        pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.right, rect.bottom), 1)
+        pygame.draw.line(window, line_color, (rect.left, rect.top), (rect.right, rect.top), 1)
 
 
 class VLane(Lane):
@@ -74,4 +80,10 @@ class VLane(Lane):
         y = min(p0[1], p1[1])
         length = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
 
-        pygame.draw.rect(window, self.color, pygame.Rect(x, y, width, length))
+        rect = pygame.Rect(x, y, width, length)
+        pygame.draw.rect(window, self.color, rect)
+
+        # draw road lines
+        line_color = (240, 240, 240)
+        pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.left, rect.top), 1)
+        pygame.draw.line(window, line_color, (rect.right, rect.bottom), (rect.right, rect.top), 1)
