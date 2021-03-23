@@ -12,11 +12,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [ ] Visualize human decision in real time
 - [ ] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
 - [ ] Prototype simple path planner in casadi - Niek 09/03
-    - [x] ~implement car dynamics using CasADi - Niek~
-    - [x] ~implement simple MPC for AV - Niek 12/03~
     - [ ] time step for integrator as parameter - Niek
-    - [x] ~Implement trajectory object for cars - Niek~
-    - [ ] Add simple obstacle avoidance to the MPC cost function
     - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
     - [ ] Look into speeding up casadi
     - [ ] Draw the planned trajectory
@@ -25,6 +21,9 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
     - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
 
+## Doing
+
+- [ ] Add simple obstacle avoidance to the MPC cost function - Niek
 
 ## Done
 
@@ -41,11 +40,14 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
         - [x] ~Implement simulated human - Arkady 09/03~
     - [x] ~Measures - Arkady 02/03~
     - [x] ~Validation criteria~
+    - [x] ~Implement trajectory object for cars - Niek~
 - [x] ~Decide on reference controller implementation - Niek~
     - [x] ~Discuss restructure of simulation setup~
     - [x] ~Search open source implementation? - Niek 02/03~
     - [x] ~Or code quick-n-dirty MPC ourselves?~
     - [x] ~Or just code a simple longitudinal controller following a velocity profile?~
+    - [x] ~implement car dynamics using CasADi - Niek~
+    - [x] ~implement simple MPC for AV - Niek 12/03~
 - [x] ~Add text rendering to simulator for basic info - Niek~
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
