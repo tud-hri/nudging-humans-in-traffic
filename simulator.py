@@ -26,10 +26,24 @@ class Simulator:
 
     def run(self):
         running = True
+        paused = False
         t0 = pygame.time.get_ticks()
         counter = 0
 
         while running:
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                elif event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        running = False
+                    if event.key == K_SPACE:
+                        paused = not paused
+
+            if paused:
+                continue
+
             if self.realtime:
                 self.clock.tick(round(1. / self.dt))  # realtime, so wait a bit for the next tick/frame
 
@@ -63,12 +77,8 @@ class Simulator:
                 running = False
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    running = False
-                elif event.type == KEYDOWN:
-                    if event.key == K_ESCAPE:
-                        running = False
+
+
 
 
 if __name__ == '__main__':
