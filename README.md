@@ -9,11 +9,30 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## To do
 
+- [ ] Visualize human decision in real time
+- [ ] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
+- [ ] Prototype simple path planner in casadi - Niek 09/03
+    - [x] ~implement car dynamics using CasADi - Niek~
+    - [x] ~implement simple MPC for AV - Niek 12/03~
+    - [ ] time step for integrator as parameter - Niek
+    - [x] ~Implement trajectory object for cars - Niek~
+    - [ ] Add simple obstacle avoidance to the MPC cost function
+    - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
+    - [ ] Look into speeding up casadi
+    - [ ] Draw the planned trajectory
+- [ ] Include cognitive model prediction into MPC - Arkady
+    - [ ] Write down the MPC's cost as a function of x and u
+    - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
+- [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
+
+
+## Done
+
 - [x] ~Create Zotero group - Arkady - 02/03~
     - [x] ~Add refs~
 - [x] ~Create Github repo - Niek - 02/03~
-- [ ] Create a test-driven development environment - Arkady, Niek
-    - [ ] Merge pygame into main (first merge main into pygame)
+- [x] ~Create a test-driven development environment - Arkady, Niek~
+    - [x] ~Merge pygame into main (first merge main into pygame)~
     - [x] ~Discuss whether CARLO is the way to go - we're overriding more and more of their code~
     - [x] ~Create simulation setup based on CARLO - Niek~ 
     - [x] ~Refactor simulation setup - Arkady 09/03~
@@ -22,31 +41,14 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
         - [x] ~Implement simulated human - Arkady 09/03~
     - [x] ~Measures - Arkady 02/03~
     - [x] ~Validation criteria~
-    - [ ] Visualize human decision in real time
-    - [ ] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
 - [x] ~Decide on reference controller implementation - Niek~
     - [x] ~Discuss restructure of simulation setup~
     - [x] ~Search open source implementation? - Niek 02/03~
     - [x] ~Or code quick-n-dirty MPC ourselves?~
     - [x] ~Or just code a simple longitudinal controller following a velocity profile?~
-- [ ] Prototype simple path planner in casadi - Niek 09/03
-    - [x] ~implement car dynamics using CasADi - Niek~
-    - [ ] implement simple MPC for AV - Niek 12/03
-    - [ ] time step for integrator as parameter - Niek
-    - [ ] implement boundary (static constraint)
-    - [ ] implement safe-trajectory MPC - Niek 19/03
-    - [ ] Implement trajectory object for cars - Niek 
-    - [ ] Add simple obstacle avoidance to the MPC cost function
-    - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
-    - [ ] Look into speeding up casadi
-    - [ ] Draw the planned trajectory
-[ ] Include cognitive model prediction into MPC - Arkady
-    - [ ] Write down the MPC's cost as a function of x and u
-    - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
+- [x] ~Add text rendering to simulator for basic info - Niek~
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
-- [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
-- [ ] Add text rendering to simulator for basic info - Niek
 
 ## Run
 
