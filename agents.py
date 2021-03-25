@@ -112,12 +112,13 @@ class CarMPC(Car):
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
         # setup the optimizer through CasADi
-        nx = self.x.shape[0]
+        self.nx = self.x.shape[0]
+        self.nu = 2
         self.opti = casadi.Opti()
-        self.x_opti = self.opti.variable(nx, self.Nh + 1)
-        self.u_opti = self.opti.variable(2, self.Nh)
-        self.p_opti = self.opti.parameter(nx, 1)
-        self.x_mpc = np.zeros((nx, 1))
+        self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
+        self.u_opti = self.opti.variable(self.nu, self.Nh)
+        self.p_opti_x0 = self.opti.parameter(self.nx, 1)
+        self.x_mpc = np.zeros((self.nx, 1))
         self.x_target = self.x
         self.q_matrix = None
 
@@ -136,7 +137,7 @@ class CarMPC(Car):
         self.opti.subject_to(self.opti.bounded(-20, self.u_opti[0, :], 20))
         self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1, :], np.pi / 2.))
         self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 100. / 3.6))
-        self.opti.subject_to(self.x_opti[:, 0] == self.p_opti)
+        self.opti.subject_to(self.x_opti[:, 0] == self.p_opti_x0)
 
     def set_objective(self):
         # desired state
@@ -151,24 +152,25 @@ class CarMPC(Car):
         self.opti.minimize(cost)
 
     def solve_opt_problem(self):
-        # set current state of initial condition
-        self.opti.set_value(self.p_opti, self.x)
+        u = np.zeros((self.nu, 1))
 
-        # solve the problem!
-        sol = self.opti.solve()
+        try:
+            self.opti.set_value(self.p_opti_x0, self.x)  # set current state of initial condition
+            sol = self.opti.solve()  # solve the problem!
 
-        # select the first index for the control input
-        accelerate = sol.value(self.u_opti)[0, 0]
-        steer = sol.value(self.u_opti)[1, 0]
-        self.x_mpc = sol.value(self.x_opti)
+            # select the first index for the control input
+            u[0] = sol.value(self.u_opti)[0, 0]
+            u[1] = sol.value(self.u_opti)[1, 0]
+            self.x_mpc = sol.value(self.x_opti)
 
-        return accelerate, steer
+        except Exception as e:
+            # no solution found, we can use this to add a breakpoint to use Casadi's debugger here.
+            print(e)
+
+        return u
 
     def calculate_action(self, sim_time: float):
-        accelerate, steer = self.solve_opt_problem()
-
-        self.u[0] = accelerate
-        self.u[1] = steer
+        self.u = self.solve_opt_problem()
 
     def draw(self, window, ppm):
         super().draw(window, ppm)
@@ -177,12 +179,6 @@ class CarMPC(Car):
         p = self.x_mpc[0:2, :] * ppm
         if p.shape[1] > 1:
             pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x)) for x in p.T.tolist()])
-
-
-class CarMPCObstacleAvoidance(CarMPC):
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'red'):
-        super(CarMPCObstacleAvoidance, self).__init__(p0, phi0, v0, world, dt, color)
-
 
 
 class CarSimulatedHuman(CarMPC):
