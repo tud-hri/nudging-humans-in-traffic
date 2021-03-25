@@ -23,7 +23,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## Doing
 
-- [ ] Add simple obstacle avoidance to the MPC cost function - Niek
+- [ ] Add simple obstacle avoidance to the MPC cost function - Niek [llllink](https://github.com/oscardegroot/lmpcc/blob/jackal_ellipsoid/lmpcc/python_forces_code/inequality.py)
 - [x] ~Draw the planned trajectory - Niek~
 
 ## Done
