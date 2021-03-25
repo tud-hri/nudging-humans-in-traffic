@@ -9,13 +9,13 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## To do
 
-- [ ] Visualize human decision in real time
+- [ ] Data visualization
+    - [ ] Visualize agent dynamics and human decision in real-time
 - [ ] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
 - [ ] Prototype simple path planner in casadi - Niek 09/03
     - [ ] time step for integrator as parameter - Niek
     - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
     - [ ] Look into speeding up casadi
-    
 - [ ] Include cognitive model prediction into MPC - Arkady
     - [ ] Write down the MPC's cost as a function of x and u
     - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  

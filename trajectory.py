@@ -17,3 +17,10 @@ class Trajectory:
         self.t.append(t)
         np.append(self.x, x)
         np.append(self.u, u)
+
+    @property
+    def x0(self):
+        if self.x.ndim == 1:
+            return self.x
+        else:
+            return self.x[:, 0]

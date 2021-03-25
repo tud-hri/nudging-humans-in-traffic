@@ -79,12 +79,6 @@ class CarUserControlled(Car):
         self.steer_int = 0.
 
     def calculate_action(self, sim_time: float):
-        """
-        Crappy implementation of a simple keyboard controller
-        :param accelerate:
-        :param steer:
-        :return:
-        """
         accelerate_sensitivity = 2  # [m/s2 / s]
         decelerate_sensitivity = 3
         steer_sensitivity = 1.5 * np.pi  # [rad/s]
@@ -97,7 +91,7 @@ class CarUserControlled(Car):
             self.accelerate_int += accelerate_sensitivity * self.dt
         elif keys[K_DOWN]:
             self.accelerate_int -= decelerate_sensitivity * self.dt
-        accelerate = min(max(self.accelerate_int, -4.), 2.)  # limit acceleration to [-4., 2.]
+        accelerate = min(max(self.accelerate_int, -20.), 20.)  # limit acceleration to [-4., 2.]
 
         if not keys[K_LEFT] or not keys[K_RIGHT]:
             self.steer_int = 0.
@@ -111,17 +105,11 @@ class CarUserControlled(Car):
         self.u[1] = steer
 
 
-class CarSimpleMPC(Car):
+class CarMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
-        super(CarSimpleMPC, self).__init__(p0, phi0, v0, world, dt, color)
+        super(CarMPC, self).__init__(p0, phi0, v0, world, dt, color)
         self.th = 1.  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
-
-        # desired state
-        self.x_target = np.array([[p0[0]],
-                                  [0.],
-                                  [-np.pi / 2.],
-                                  [50. / 3.6]])
 
         # setup the optimizer through CasADi
         nx = self.x.shape[0]
@@ -129,14 +117,19 @@ class CarSimpleMPC(Car):
         self.x_opti = self.opti.variable(nx, self.Nh + 1)
         self.u_opti = self.opti.variable(2, self.Nh)
         self.p_opti = self.opti.parameter(nx, 1)
-
         self.x_mpc = np.zeros((nx, 1))
+        self.x_target = self.x
+        self.q_matrix = None
 
-        # set objective
-        self.q_matrix = np.diag([.5, 1e-6, 0.05, 1.])
-        dx = self.x_target - self.x_opti
-        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
+        self.set_objective()  # set objective
+        self.set_constraints()  # set constraints
 
+        # setup solver
+        p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
+        s_opts = {'max_iter': 1e5, 'print_level': 0}
+        self.opti.solver('ipopt', p_opts, s_opts)
+
+    def set_constraints(self):
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
@@ -145,12 +138,19 @@ class CarSimpleMPC(Car):
         self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 100. / 3.6))
         self.opti.subject_to(self.x_opti[:, 0] == self.p_opti)
 
-        # setup solver
-        p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
-        s_opts = {'max_iter': 1e5, 'print_level': 0}
-        self.opti.solver('ipopt', p_opts, s_opts)
+    def set_objective(self):
+        # desired state
+        self.x_target = np.array([[self.trajectory.x0[0]],
+                                  [0.],
+                                  [-np.pi / 2.],
+                                  [50. / 3.6]])
+        self.q_matrix = np.diag([.5, 1e-6, 0.05, 1.])
+        dx = self.x_target - self.x_opti
+        cost = sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti)
 
-    def solve_optim(self):
+        self.opti.minimize(cost)
+
+    def solve_opt_problem(self):
         # set current state of initial condition
         self.opti.set_value(self.p_opti, self.x)
 
@@ -165,7 +165,7 @@ class CarSimpleMPC(Car):
         return accelerate, steer
 
     def calculate_action(self, sim_time: float):
-        accelerate, steer = self.solve_optim()
+        accelerate, steer = self.solve_opt_problem()
 
         self.u[0] = accelerate
         self.u[1] = steer
@@ -179,14 +179,23 @@ class CarSimpleMPC(Car):
             pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x)) for x in p.T.tolist()])
 
 
-class CarSimulatedHuman(CarSimpleMPC):
+class CarMPCObstacleAvoidance(CarMPC):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'red'):
+        super(CarMPCObstacleAvoidance, self).__init__(p0, phi0, v0, world, dt, color)
+
+
+
+class CarSimulatedHuman(CarMPC):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, dt: float = 0.1, color: str = 'red'):
         super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, dt, color)
         self.human_model = human_model
         self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
 
-        # MPC setup
-        # desired state
+        self.decision = None
+        self.t_decision = None
+        self.is_turn_completed = False
+
+    def set_objective(self):
         self.x_target = np.array([[0.],
                                   [30.],
                                   [np.pi],
@@ -194,11 +203,8 @@ class CarSimulatedHuman(CarSimpleMPC):
         # set objective
         self.q_matrix = np.diag([1e-6, 2., 4., 2.])
         dx = self.x_target - self.x_opti
-        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
 
-        self.decision = None
-        self.t_decision = None
-        self.is_turn_completed = False
+        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
 
     def calculate_action(self, sim_time: float):
         # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
