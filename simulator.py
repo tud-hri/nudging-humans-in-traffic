@@ -4,6 +4,7 @@ from pygame.locals import *
 
 import scenarios
 from intersection_world import IntersectionWorld
+from utils import coordinate_transform
 
 
 class Simulator:
@@ -57,6 +58,11 @@ class Simulator:
             # draw the world
             self.world.draw(self.window, self.ppm)
 
+            # draw the obstacle
+            r = pygame.Rect(0, 0, 3. * self.ppm, 5. * self.ppm)
+            r.center = coordinate_transform((37. * self.ppm, 40. * self.ppm))
+            pygame.draw.ellipse(self.window, 'orange', r)
+
             # simulator state
             sim_state_text = ["t_real: {:.2f}".format(t_elapsed),
                               "t_sim: {:.2f}".format(self.t[counter])]
@@ -76,9 +82,6 @@ class Simulator:
             if self.dt * counter >= self.T:
                 running = False
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
-
-
-
 
 
 if __name__ == '__main__':

@@ -108,36 +108,63 @@ class CarUserControlled(Car):
 class CarMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
         super(CarMPC, self).__init__(p0, phi0, v0, world, dt, color)
-        self.th = 1.  # time horizon (2 seconds)
+        self.th = 1.5  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
         # setup the optimizer through CasADi
         self.nx = self.x.shape[0]
-        self.nu = 2
-        self.opti = casadi.Opti()
-        self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
-        self.u_opti = self.opti.variable(self.nu, self.Nh)
-        self.p_opti_x0 = self.opti.parameter(self.nx, 1)
+        self.nu = 2  # two inputs, accelerate and steer
+        self.opti = casadi.Opti()  # Opti() facilitates the NLP problem definition and solver
+
         self.x_mpc = np.zeros((self.nx, 1))
         self.x_target = self.x
         self.q_matrix = None
+
+        # create symbolic variables
+        self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
+        self.u_opti = self.opti.variable(self.nu, self.Nh)
+        self.p_opti_x0 = self.opti.parameter(self.nx, 1)
+        self.p_opti_obstacle = self.opti.parameter(self.nx, 1)  # position and heading of one obstacle, can be
+
+        # fixed here for now, but should be read from the actual obstacle, of course
+        self.obstacle_major = 2.5
+        self.obstacle_minor = 1.
 
         self.set_objective()  # set objective
         self.set_constraints()  # set constraints
 
         # setup solver
         p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
-        s_opts = {'max_iter': 1e5, 'print_level': 0}
+        s_opts = {'max_iter': 1e6, 'print_level': 0}
         self.opti.solver('ipopt', p_opts, s_opts)
 
     def set_constraints(self):
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
-        self.opti.subject_to(self.opti.bounded(-20, self.u_opti[0, :], 20))
+        self.opti.subject_to(self.opti.bounded(-15, self.u_opti[0, :], 15))
         self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1, :], np.pi / 2.))
-        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 100. / 3.6))
-        self.opti.subject_to(self.x_opti[:, 0] == self.p_opti_x0)
+        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 80. / 3.6))
+        self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])
+
+        # dynamic obstacle avoidance, based on Bruno Brito's paper: https://ieeexplore.ieee.org/document/8768044
+        phi_obstacle = self.p_opti_obstacle[2]
+        rot_phi = MX(2, 2)
+        rot_phi[0, 0] = casadi.cos(phi_obstacle)
+        rot_phi[0, 1] = -casadi.sin(phi_obstacle)
+        rot_phi[1, 0] = casadi.sin(phi_obstacle)
+        rot_phi[1, 1] = casadi.cos(phi_obstacle)
+
+        # Compute ellipse matrix
+        r_disc = self.car_length / 2.
+        ab = np.array([[1. / ((self.obstacle_major + r_disc) ** 2), 0],
+                       [0, 1. / ((self.obstacle_minor + r_disc) ** 2)]])
+
+        for k in range(0, self.Nh, 1):
+            dx = MX(2, 1)
+            dx[0] = self.p_opti_obstacle[0] - self.x_opti[0, k]
+            dx[1] = self.p_opti_obstacle[1] - self.x_opti[1, k]
+            self.opti.subject_to(dx.T @ rot_phi.T @ ab @ rot_phi @ dx > 1.)
 
     def set_objective(self):
         # desired state
@@ -145,7 +172,7 @@ class CarMPC(Car):
                                   [0.],
                                   [-np.pi / 2.],
                                   [50. / 3.6]])
-        self.q_matrix = np.diag([.5, 1e-6, 0.05, 1.])
+        self.q_matrix = np.diag([.1, 0.2, 0.01, .25])
         dx = self.x_target - self.x_opti
         cost = sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti)
 
@@ -154,18 +181,19 @@ class CarMPC(Car):
     def solve_opt_problem(self):
         u = np.zeros((self.nu, 1))
 
-        try:
-            self.opti.set_value(self.p_opti_x0, self.x)  # set current state of initial condition
-            sol = self.opti.solve()  # solve the problem!
+        # try:
+        self.opti.set_value(self.p_opti_x0, self.x)  # set current state of initial condition
+        self.opti.set_value(self.p_opti_obstacle, np.array([[37.], [40.], [np.pi / 2.], [0.]]))
+        sol = self.opti.solve()  # solve the problem!
 
-            # select the first index for the control input
-            u[0] = sol.value(self.u_opti)[0, 0]
-            u[1] = sol.value(self.u_opti)[1, 0]
-            self.x_mpc = sol.value(self.x_opti)
+        # select the first index for the control input
+        u[0] = sol.value(self.u_opti)[0, 0]
+        u[1] = sol.value(self.u_opti)[1, 0]
+        self.x_mpc = sol.value(self.x_opti)
 
-        except Exception as e:
-            # no solution found, we can use this to add a breakpoint to use Casadi's debugger here.
-            print(e)
+        # except Exception as e:
+        #     # no solution found, we can use this to add a breakpoint to use Casadi's debugger here.
+        #     print(e)
 
         return u
 
