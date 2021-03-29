@@ -1,4 +1,4 @@
-from lane import VLane, HLane
+from lane import VLane, HLane, VShoulder, HShoulder
 
 
 class IntersectionWorld:
@@ -15,6 +15,7 @@ class IntersectionWorld:
 
         self.agents = {}
         self.lanes = []
+        self.shoulders = []  # all the road shoulders, added to keep the cars on the road.
 
         self.create_intersection()
 
@@ -26,14 +27,18 @@ class IntersectionWorld:
         self.lanes.append(VLane([40., 0.], [40., 120.], 3.))
         self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
 
+        # shoulders / bounds
+        self.shoulders.append(HShoulder([0., 31.5], side='top'))  # shoulder left turn, top
+        self.shoulders.append(VShoulder([35.5, 0.], side='left'))  # shoulder left of vertical road
+        self.shoulders.append(VShoulder([41.5, 0.], side='right'))  # shoulder right of vertical road
 
     def tick(self, sim_time: float):
         # find action
-        for _, agent in self.agents.items():
+        for agent in self.agents.values():
             agent.calculate_action(sim_time)
 
         # apply action, integrate
-        for _, agent, in self.agents.items():
+        for agent in self.agents.values():
             agent.tick(sim_time)
 
     def draw(self, window, ppm):

@@ -7,7 +7,7 @@ from intersection_world import IntersectionWorld
 from simulator import Simulator
 
 # Run an example experiment
-dt = 0.05  # 20 ms time step
+dt = 0.1  # 20 ms time step
 
 # create our world
 # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)

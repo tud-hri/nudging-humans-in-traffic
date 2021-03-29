@@ -58,10 +58,10 @@ class Simulator:
             # draw the world
             self.world.draw(self.window, self.ppm)
 
-            # draw the obstacle
-            r = pygame.Rect(0, 0, 3. * self.ppm, 5. * self.ppm)
-            r.center = coordinate_transform((37. * self.ppm, 40. * self.ppm))
-            pygame.draw.ellipse(self.window, 'orange', r)
+            # # draw the obstacle
+            # r = pygame.Rect(0, 0, 3. * self.ppm, 5. * self.ppm)
+            # r.center = coordinate_transform((37. * self.ppm, 40. * self.ppm))
+            # pygame.draw.ellipse(self.window, 'orange', r)
 
             # simulator state
             sim_state_text = ["t_real: {:.2f}".format(t_elapsed),

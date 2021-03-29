@@ -79,8 +79,8 @@ class CarUserControlled(Car):
         self.steer_int = 0.
 
     def calculate_action(self, sim_time: float):
-        accelerate_sensitivity = 2  # [m/s2 / s]
-        decelerate_sensitivity = 3
+        accelerate_sensitivity = 2.  # [m/s2 / s]
+        decelerate_sensitivity = 3.
         steer_sensitivity = 1.5 * np.pi  # [rad/s]
 
         keys = pygame.key.get_pressed()
@@ -117,20 +117,17 @@ class CarMPC(Car):
         self.opti = casadi.Opti()  # Opti() facilitates the NLP problem definition and solver
 
         self.x_mpc = np.zeros((self.nx, 1))
-        self.x_target = self.x
-        self.q_matrix = None
+        self.cost_function = None
+        self.v_des = 30 / 3.6  # desired velocity
+        self.theta = np.zeros((4, 1))  # objective function weights [velocity, lane_center, boundary, input]
 
         # create symbolic variables
         self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
         self.u_opti = self.opti.variable(self.nu, self.Nh)
         self.p_opti_x0 = self.opti.parameter(self.nx, 1)
-        self.p_opti_obstacle = self.opti.parameter(self.nx, 1)  # position and heading of one obstacle, can be
+        # self.p_opti_obstacle = self.opti.parameter(self.nx, 1)  # position and heading of one obstacle, can be
 
-        # fixed here for now, but should be read from the actual obstacle, of course
-        self.obstacle_major = 2.5
-        self.obstacle_minor = 1.
-
-        self.set_objective()  # set objective
+        # self.set_objective()  # set objective
         self.set_constraints()  # set constraints
 
         # setup solver
@@ -142,48 +139,58 @@ class CarMPC(Car):
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
-        self.opti.subject_to(self.opti.bounded(-15, self.u_opti[0, :], 15))
-        self.opti.subject_to(self.opti.bounded(-np.pi / 2., self.u_opti[1, :], np.pi / 2.))
-        self.opti.subject_to(self.opti.bounded(-10. / 3.6, self.x_opti[3, :], 80. / 3.6))
+        self.opti.subject_to(self.opti.bounded(-15, self.u_opti[0, :], 10))
+        self.opti.subject_to(self.opti.bounded(-0.25 * np.pi, self.u_opti[1, :], 0.25 * np.pi))
+        self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))
         self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])
 
-        # dynamic obstacle avoidance, based on Bruno Brito's paper: https://ieeexplore.ieee.org/document/8768044
-        phi_obstacle = self.p_opti_obstacle[2]
-        rot_phi = MX(2, 2)
-        rot_phi[0, 0] = casadi.cos(phi_obstacle)
-        rot_phi[0, 1] = -casadi.sin(phi_obstacle)
-        rot_phi[1, 0] = casadi.sin(phi_obstacle)
-        rot_phi[1, 1] = casadi.cos(phi_obstacle)
+        # # dynamic obstacle avoidance, based on Bruno Brito's paper: https://ieeexplore.ieee.org/document/8768044
+        # phi_obstacle = self.p_opti_obstacle[2]
+        # rot_phi = MX(2, 2)
+        # rot_phi[0, 0] = casadi.cos(phi_obstacle)
+        # rot_phi[0, 1] = -casadi.sin(phi_obstacle)
+        # rot_phi[1, 0] = casadi.sin(phi_obstacle)
+        # rot_phi[1, 1] = casadi.cos(phi_obstacle)
+        #
+        # # Compute ellipse matrix
+        # r_disc = self.car_length / 2.
+        # ab = np.array([[1. / ((self.obstacle_major + r_disc) ** 2), 0],
+        #                [0, 1. / ((self.obstacle_minor + r_disc) ** 2)]])
+        #
+        # for k in range(0, self.Nh, 1):
+        #     dx = MX(2, 1)
+        #     dx[0] = self.p_opti_obstacle[0] - self.x_opti[0, k]
+        #     dx[1] = self.p_opti_obstacle[1] - self.x_opti[1, k]
+        #     self.opti.subject_to(dx.T @ rot_phi.T @ ab @ rot_phi @ dx > 1.)
 
-        # Compute ellipse matrix
-        r_disc = self.car_length / 2.
-        ab = np.array([[1. / ((self.obstacle_major + r_disc) ** 2), 0],
-                       [0, 1. / ((self.obstacle_minor + r_disc) ** 2)]])
+    def set_objective(self, theta, lanes, shoulders=None, obstacles=None):
 
-        for k in range(0, self.Nh, 1):
-            dx = MX(2, 1)
-            dx[0] = self.p_opti_obstacle[0] - self.x_opti[0, k]
-            dx[1] = self.p_opti_obstacle[1] - self.x_opti[1, k]
-            self.opti.subject_to(dx.T @ rot_phi.T @ ab @ rot_phi @ dx > 1.)
+        self.theta = np.asarray(theta)
 
-    def set_objective(self):
-        # desired state
-        self.x_target = np.array([[self.trajectory.x0[0]],
-                                  [0.],
-                                  [-np.pi / 2.],
-                                  [50. / 3.6]])
-        self.q_matrix = np.diag([.1, 0.2, 0.01, .25])
-        dx = self.x_target - self.x_opti
-        cost = sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti)
+        # desired velocity
+        self.cost_function = self.theta[0] * sumsqr(self.x_opti[3, :] - self.v_des)
 
-        self.opti.minimize(cost)
+        # add lane features
+        for lane in lanes:
+            self.cost_function += self.theta[1] * sum2(lane.feature_lane_center(c=0.25, x=self.x_opti))
+
+        # add shoulder features
+        if shoulders:
+            for shoulder in shoulders:
+                self.cost_function += self.theta[2] * sum2(shoulder.feature_shoulder(c=2., x=self.x_opti))
+
+        # input / control effort
+        self.cost_function += self.theta[3] * sumsqr(self.u_opti)
+
+        self.opti.minimize(self.cost_function)
 
     def solve_opt_problem(self):
         u = np.zeros((self.nu, 1))
 
         # try:
         self.opti.set_value(self.p_opti_x0, self.x)  # set current state of initial condition
-        self.opti.set_value(self.p_opti_obstacle, np.array([[37.], [40.], [np.pi / 2.], [0.]]))
+
+        # self.opti.set_value(self.p_opti_obstacle, np.array([[37.], [40.], [np.pi / 2.], [0.]]))
         sol = self.opti.solve()  # solve the problem!
 
         # select the first index for the control input
@@ -218,17 +225,6 @@ class CarSimulatedHuman(CarMPC):
         self.decision = None
         self.t_decision = None
         self.is_turn_completed = False
-
-    def set_objective(self):
-        self.x_target = np.array([[0.],
-                                  [30.],
-                                  [np.pi],
-                                  [50. / 3.6]])
-        # set objective
-        self.q_matrix = np.diag([1e-6, 2., 4., 2.])
-        dx = self.x_target - self.x_opti
-
-        self.opti.minimize(sumsqr(self.q_matrix @ dx) + sumsqr(self.u_opti))
 
     def calculate_action(self, sim_time: float):
         # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
