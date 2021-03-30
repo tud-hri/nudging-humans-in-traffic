@@ -26,9 +26,6 @@ class CarDynamics:
         x = vertcat(MX.sym('x'), MX.sym('y'), MX.sym('phi'), MX.sym('v'))  # state vector: [x, y, phi, v]
         u = vertcat(MX.sym('a'), MX.sym('dr'))  # input vector: [a, dr]
 
-        if x0 is None:
-            x0 = np.zeros(x.shape)
-
         # simple bicycle dynamics, see https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225830
         self.length = 4. # assume a car is 4 meters; this should be a variable, really, but can't be bothered, hehe
         lr = self.length / 2.

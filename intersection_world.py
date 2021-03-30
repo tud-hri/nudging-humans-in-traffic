@@ -28,9 +28,9 @@ class IntersectionWorld:
         self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
 
         # shoulders / bounds
-        self.shoulders.append(HShoulder([0., 31.5], side='top'))  # shoulder left turn, top
-        self.shoulders.append(VShoulder([35.5, 0.], side='left'))  # shoulder left of vertical road
-        self.shoulders.append(VShoulder([41.5, 0.], side='right'))  # shoulder right of vertical road
+        self.shoulders.append(HShoulder([0., 32], side='top'))  # shoulder left turn, top
+        self.shoulders.append(VShoulder([35, 0.], side='left'))  # shoulder left of vertical road
+        self.shoulders.append(VShoulder([42, 0.], side='right'))  # shoulder right of vertical road
 
     def tick(self, sim_time: float):
         # find action

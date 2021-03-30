@@ -30,18 +30,6 @@ class Lane:
     def feature_lane_center(self, c, x):
         pass
 
-    # @abc.abstractmethod
-    # def boundary(self, x, phi, d=10, n=10):
-    #     """
-    #     return the left and right road boundaries for a lookahead distance l as seen from position x, for a number of samples N.
-    #     :param x: current position (2,1) [m, m]
-    #     :param phi: current heading (1,1) [rad]
-    #     :param d: look ahead distance
-    #     :param n: number of samples
-    #     :return: nparray (2,N) with left and right boundaries (car's perspective)
-    #     """
-    #     pass
-
 
 class HLane(Lane):
     def __init__(self, p0, p1, width):
@@ -68,7 +56,7 @@ class HLane(Lane):
         # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.right, rect.bottom), 1)
         # pygame.draw.line(window, line_color, (rect.left, rect.top), (rect.right, rect.top), 1)
 
-    def feature_lane_center(self, c, x):
+    def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[1, :] - self.p0[1]) ** 2)
 
 
@@ -97,7 +85,7 @@ class VLane(Lane):
         # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.left, rect.top), 1)
         # pygame.draw.line(window, line_color, (rect.right, rect.bottom), (rect.right, rect.top), 1)
 
-    def feature_lane_center(self, c, x):
+    def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[0, :] - self.p0[0]) ** 2)
 
 
@@ -116,7 +104,7 @@ class HShoulder:
         else:
             self._sign = 1.0
 
-    def feature_shoulder(self, c, x):
+    def feature_shoulder(self, x, c=2.):
         """
         Sigmoid function to model the cost of crossing the shoulder (e.g. going off-road: high cost (1), on road: low cost (0))
         :param c: 'steepness' of the sigmoid
@@ -140,7 +128,7 @@ class VShoulder:
         else:
             self._sign = -1.0
 
-    def feature_shoulder(self, c, x):
+    def feature_shoulder(self, x, c=4.):
         """
         Sigmoid function to model the cost of crossing the shoulder (e.g. going off-road: high cost (1), on road: low cost (0))
         :param c: 'steepness' of the sigmoid

@@ -57,6 +57,27 @@ class Car:
     def __str__(self):
         return "state: {}".format(self.x.T)
 
+    def feature_collision(self, x, sdx=4., sdy=1.5):
+        """
+        Represent the car's collision feature as a 2D gaussian
+        :param x: state vector to calculate reward for
+        :param sdx: SD in car length
+        :param sdy: SD in car width
+        :return: accumulated reward
+        """
+        theta = self.x[2]
+
+        f = MX(1, x.shape[1])
+        for k in range(0, x.shape[1]):
+            d = (x[0, k] - self.x[0], x[1, k] - self.x[1])
+
+            dh = casadi.cos(theta) * d[0] - casadi.sin(theta) * d[1]
+            dw = casadi.sin(theta) * d[0] + casadi.cos(theta) * d[1]
+
+            f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (sdy * sqrt(2. * np.pi)) * casadi.exp(
+                -0.5 * dw ** 2 / sdy ** 2)
+        return f
+
     def text_state_render(self):
         font = pygame.font.SysFont("verdana", 12)
         text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f}; u_a: {4: .2f}, u_phi: {5: .2f}".format(self.x[0, 0], self.x[1, 0], self.x[2, 0],
@@ -119,7 +140,7 @@ class CarMPC(Car):
         self.x_mpc = np.zeros((self.nx, 1))
         self.cost_function = None
         self.v_des = 30 / 3.6  # desired velocity
-        self.theta = np.zeros((4, 1))  # objective function weights [velocity, lane_center, boundary, input]
+        self.theta = np.zeros((7, 1))  # objective function weights [velocity, lane_center, boundary, input]
 
         # create symbolic variables
         self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
@@ -163,24 +184,38 @@ class CarMPC(Car):
         #     dx[1] = self.p_opti_obstacle[1] - self.x_opti[1, k]
         #     self.opti.subject_to(dx.T @ rot_phi.T @ ab @ rot_phi @ dx > 1.)
 
-    def set_objective(self, theta, lanes, shoulders=None, obstacles=None):
+    def set_objective(self, theta, primary_lanes, all_lanes=None, road_shoulders=None, obstacles=None, heading=None):
 
         self.theta = np.asarray(theta)
 
         # desired velocity
         self.cost_function = self.theta[0] * sumsqr(self.x_opti[3, :] - self.v_des)
 
+        # desired heading
+        if heading is not None:
+            self.cost_function += self.theta[1] * sumsqr(self.x_opti[2, :] - heading)
+
+        # add primary lane features
+        for lane in primary_lanes:
+            self.cost_function += self.theta[2] * sum2(lane.feature_lane_center(c=0.2, x=self.x_opti))
+
         # add lane features
-        for lane in lanes:
-            self.cost_function += self.theta[1] * sum2(lane.feature_lane_center(c=0.25, x=self.x_opti))
+        if all_lanes is not None:
+            for lane in all_lanes:
+                self.cost_function += self.theta[3] * sum2(lane.feature_lane_center(c=0.2, x=self.x_opti))
 
         # add shoulder features
-        if shoulders:
-            for shoulder in shoulders:
-                self.cost_function += self.theta[2] * sum2(shoulder.feature_shoulder(c=2., x=self.x_opti))
+        if road_shoulders is not None:
+            for shoulder in road_shoulders:
+                self.cost_function += self.theta[4] * sum2(shoulder.feature_shoulder(c=2., x=self.x_opti))
+
+        # add collision object features
+        if obstacles is not None:
+            for obstacle in obstacles:
+                self.cost_function += self.theta[5] * sum2(obstacle.feature_collision(sdx=3, sdy=1.5, x=self.x_opti))
 
         # input / control effort
-        self.cost_function += self.theta[3] * sumsqr(self.u_opti)
+        self.cost_function += self.theta[6] * sumsqr(self.u_opti)
 
         self.opti.minimize(self.cost_function)
 
