@@ -9,14 +9,14 @@ from utils import coordinate_transform
 
 
 class Car:
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'red'):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
         x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
-        self.dt = dt
-        self.dynamics = CarDynamics(dt, x0=x0)
+        self.world = world
+        self.dt = world.dt
+        self.dynamics = CarDynamics(self.dt, x0=x0)
         self.u = np.zeros((2, 1))  # [acceleration, steering]
         self.x = x0  # [x, y, phi, v]
         self.trajectory = Trajectory(x0, self.u)
-        self.world = world
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
         self.color = color
@@ -73,8 +73,8 @@ class Car:
 
 
 class CarUserControlled(Car):
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'blue'):
-        super(CarUserControlled, self).__init__(p0, phi0, v0, world, dt, color)
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'blue'):
+        super(CarUserControlled, self).__init__(p0, phi0, v0, world, color)
         self.accelerate_int = 0.
         self.steer_int = 0.
 
@@ -106,8 +106,8 @@ class CarUserControlled(Car):
 
 
 class CarMPC(Car):
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
-        super(CarMPC, self).__init__(p0, phi0, v0, world, dt, color)
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'yellow'):
+        super(CarMPC, self).__init__(p0, phi0, v0, world, color)
         self.th = 1.  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
@@ -182,8 +182,8 @@ class CarMPC(Car):
 
 
 class CarSimulatedHuman(CarMPC):
-    def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, dt: float = 0.1, color: str = 'red'):
-        super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, dt, color)
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, human_model: HumanModel = None, color: str = 'red'):
+        super(CarSimulatedHuman, self).__init__(p0, phi0, v0, world, color)
         self.human_model = human_model
         self.turning_time = 3.0  # how long the steer and acceleration commands are applied for after the decision is made
 

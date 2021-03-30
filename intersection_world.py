@@ -26,7 +26,6 @@ class IntersectionWorld:
         self.lanes.append(VLane([40., 0.], [40., 120.], 3.))
         self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
 
-
     def tick(self, sim_time: float):
         # find action
         for _, agent in self.agents.items():

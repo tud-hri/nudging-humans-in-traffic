@@ -29,18 +29,18 @@ def scenario1(world: IntersectionWorld):
                                                           delay_mean=0.8,
                                                           delay_std=0.3)
 
-    human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=27,
-                                                              boundary=2,
-                                                              drift_rate=2,
+    human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=40,
+                                                              boundary=1,
+                                                              drift_rate=0.5,
                                                               diffusion_rate=1,
                                                               dt=world.dt)
 
-    car_human = agents.CarSimulatedHuman(p0=[40., 20.], phi0=np.pi / 2., world=world, human_model=human_model, dt=world.dt, color='red')
+    car_human = agents.CarSimulatedHuman(p0=[40., 20.], phi0=np.pi / 2., world=world, human_model=human_model, color='red')
     world.agents.update({'human': car_human})
 
     # add AV (hardcoded inputs)
     # u = np.zeros((2, world.time_vector.shape[0]))
     # u[1, 0:int(1 / world.dt)] = 6
     # u[1, int(1 / world.dt):-1] = 0.05  # just a little bit of acceleration to compensate for friction
-    car_av = agents.CarMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=30 / 3.6, world=world, dt=world.dt, color='yellow')
+    car_av = agents.CarMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=30 / 3.6, world=world, color='yellow')
     world.agents.update({'av': car_av})

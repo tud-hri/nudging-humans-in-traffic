@@ -1,8 +1,9 @@
 import numpy as np
 
-# TODO: extend the models with time gap and acceleration
-# TODO: manage model parameters properly
+
 class HumanModel:
+    # TODO: extend the models with time gap and acceleration
+    # TODO: manage model parameters properly
     def __init__(self):
         pass
 
