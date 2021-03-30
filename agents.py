@@ -10,7 +10,7 @@ from utils import coordinate_transform
 
 class Car:
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'red'):
-        x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
+        x0 = np.array([p0[0], p0[1], phi0, v0]).T  # initial condition
         self.dt = dt
         self.dynamics = CarDynamics(dt, x0=x0)
         self.u = np.zeros((2, 1))  # [acceleration, steering]

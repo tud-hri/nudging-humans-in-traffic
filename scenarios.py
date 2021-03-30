@@ -35,7 +35,7 @@ def scenario1(world: IntersectionWorld):
                                                               diffusion_rate=1,
                                                               dt=world.dt)
 
-    car_human = agents.CarSimulatedHuman(p0=[40., 20.], v0=0., phi0=np.pi / 2., world=world, human_model=human_model, dt=world.dt, color='red')
+    car_human = agents.CarSimulatedHuman(p0=[37., 15.], v0=0., phi0=np.pi / 2., world=world, human_model=human_model, dt=world.dt, color='red')
     world.agents.update({'human': car_human})
 
     # add AV
