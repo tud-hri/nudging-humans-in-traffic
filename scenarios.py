@@ -29,9 +29,9 @@ def scenario1(world: IntersectionWorld):
                                                           delay_mean=0.8,
                                                           delay_std=0.3)
 
-    human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=27,
-                                                              boundary=2,
-                                                              drift_rate=2,
+    human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=40,
+                                                              boundary=1,
+                                                              drift_rate=0.5,
                                                               diffusion_rate=1,
                                                               dt=world.dt)
 
