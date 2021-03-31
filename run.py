@@ -16,5 +16,5 @@ world = IntersectionWorld(dt=dt, width=80., height=80.)
 # run a scenario in this world
 scenarios.scenario1(world=world)
 
-sim = Simulator(world, T=15., dt=dt, ppm=8)
+sim = Simulator(world, T=10., dt=dt, ppm=8)
 sim.run()

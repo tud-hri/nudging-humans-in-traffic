@@ -57,19 +57,24 @@ class Car:
     def __str__(self):
         return "state: {}".format(self.x.T)
 
-    def feature_collision(self, x, sdx=4., sdy=1.5):
+    def feature_collision(self, x_eval, sdx=4., sdy=1.5, x_ego_sym=None):
         """
         Represent the car's collision feature as a 2D gaussian
-        :param x: state vector to calculate reward for
+        :param x_eval: state vector to calculate reward for
         :param sdx: SD in car length
         :param sdy: SD in car width
         :return: accumulated reward
         """
-        theta = self.x[2]
+        if x_ego_sym is None:
+            x_ego = self.x
+        else:
+            x_ego = x_ego_sym
 
-        f = MX(1, x.shape[1])
-        for k in range(0, x.shape[1]):
-            d = (x[0, k] - self.x[0], x[1, k] - self.x[1])
+        theta = x_ego[2]
+        n = x_eval.shape[1]
+        f = MX(1, n)
+        for k in range(0, n):
+            d = (x_eval[0, k] - x_ego[0], x_eval[1, k] - x_ego[1])
 
             dh = casadi.cos(theta) * d[0] - casadi.sin(theta) * d[1]
             dw = casadi.sin(theta) * d[0] + casadi.cos(theta) * d[1]
@@ -129,7 +134,7 @@ class CarUserControlled(Car):
 class CarMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, dt: float = 0.1, color: str = 'yellow'):
         super(CarMPC, self).__init__(p0, phi0, v0, world, dt, color)
-        self.th = 1.5  # time horizon (2 seconds)
+        self.th = 1.5  # time horizon (seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
         # setup the optimizer through CasADi
@@ -146,10 +151,11 @@ class CarMPC(Car):
         self.x_opti = self.opti.variable(self.nx, self.Nh + 1)
         self.u_opti = self.opti.variable(self.nu, self.Nh)
         self.p_opti_x0 = self.opti.parameter(self.nx, 1)
-        # self.p_opti_obstacle = self.opti.parameter(self.nx, 1)  # position and heading of one obstacle, can be
 
-        # self.set_objective()  # set objective
-        self.set_constraints()  # set constraints
+        self.obstacles = None
+        self.p_opti_x_obstacles = None  # placeholder - self.opti.parameter value to communicate the obstacle states to the solver
+
+        self.set_constraints()  # set optimization problem constraints
 
         # setup solver
         p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
@@ -210,9 +216,14 @@ class CarMPC(Car):
                 self.cost_function += self.theta[4] * sum2(shoulder.feature_shoulder(c=2., x=self.x_opti))
 
         # add collision object features
+        #fixme: needs better explanations
+        # 1. store the obstacle list, 2. create CasADi optimization parameters that are used to update the obstacle's state in the opti problem, 3. create the objective function in CasADi symbolics.
+        self.obstacles = obstacles
         if obstacles is not None:
-            for obstacle in obstacles:
-                self.cost_function += self.theta[5] * sum2(obstacle.feature_collision(sdx=3, sdy=1.5, x=self.x_opti))
+            self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
+            for i in range(len(obstacles)):
+                self.cost_function += self.theta[5] * sum2(
+                    obstacles[i].feature_collision(sdx=3, sdy=1.5, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:,i]))
 
         # input / control effort
         self.cost_function += self.theta[6] * sumsqr(self.u_opti)
@@ -225,7 +236,11 @@ class CarMPC(Car):
         # try:
         self.opti.set_value(self.p_opti_x0, self.x)  # set current state of initial condition
 
-        # self.opti.set_value(self.p_opti_obstacle, np.array([[37.], [40.], [np.pi / 2.], [0.]]))
+        # update the obstacle positions in the
+        if self.obstacles is not None:
+            for i in range(len(self.obstacles)):
+                self.opti.set_value(self.p_opti_x_obstacles[:, i], self.obstacles[i].x)
+
         sol = self.opti.solve()  # solve the problem!
 
         # select the first index for the control input
