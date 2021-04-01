@@ -1,16 +1,16 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 from pygame.locals import *
 
 import scenarios
 from intersection_world import IntersectionWorld
-from utils import coordinate_transform
 
 
 class Simulator:
-    def __init__(self, world, T: float, dt: float = 0.1, ppm: int = 6, realtime=True):
-        self.T = T
-        self.dt = max(dt, 0.02)  # max freq = 50Hz
+    def __init__(self, world, end_time: float, dt: float = 0.1, ppm: int = 6, realtime=True):
+        self.T = end_time
+        self.dt = world.dt  # max freq = 50Hz
         self.N = round(self.T / self.dt)
         self.t = np.linspace(0., self.T - self.dt, self.N)
         self.world = world
@@ -58,11 +58,6 @@ class Simulator:
             # draw the world
             self.world.draw(self.window, self.ppm)
 
-            # # draw the obstacle
-            # r = pygame.Rect(0, 0, 3. * self.ppm, 5. * self.ppm)
-            # r.center = coordinate_transform((37. * self.ppm, 40. * self.ppm))
-            # pygame.draw.ellipse(self.window, 'orange', r)
-
             # simulator state
             sim_state_text = ["t_real: {:.2f}".format(t_elapsed),
                               "t_sim: {:.2f}".format(self.t[counter])]
@@ -83,12 +78,48 @@ class Simulator:
                 running = False
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
+        self.plot_stuff()
+
+    def plot_stuff(self):
+        human = self.world.agents["human"].trajectory
+        av = self.world.agents["av"].trajectory
+
+        fig, axs = plt.subplots(4, 1)
+
+        # velocity
+        axs[0].plot(human.t, human.x[3, :], color=self.world.agents["human"].color)
+        axs[0].plot(av.t, av.x[3, :], color=self.world.agents["av"].color)
+        axs[0].set_xlabel('t, s')
+        axs[0].set_ylabel('$v$, m/s')
+        axs[0].legend(['human', 'av'])
+
+        # phi
+        axs[1].plot(human.t, human.x[2, :], color=self.world.agents["human"].color)
+        axs[1].plot(av.t, av.x[2, :], color=self.world.agents["av"].color)
+        axs[1].set_xlabel('t, s')
+        axs[1].set_ylabel('$\psi$, rad')
+
+        # acceleration / deceleration
+        axs[2].plot(human.t, human.u[0, :] + human.u[1, :], color=self.world.agents["human"].color)
+        axs[2].plot(av.t, av.u[0, :] + av.u[1, :], color=self.world.agents["av"].color)
+        axs[2].set_xlabel('t, s')
+        axs[2].set_ylabel('$u_{acc}$, rad')
+
+        # steering wheel
+        axs[3].plot(human.t, human.u[2, :], color=self.world.agents["human"].color)
+        axs[3].plot(av.t, av.u[2, :], color=self.world.agents["av"].color)
+        axs[3].set_xlabel('t, s')
+        axs[3].set_ylabel('$\delta_r$, rad')
+
+        fig.tight_layout()
+        plt.show()
+
 
 if __name__ == '__main__':
     # a whole new woooooorld
-    world = IntersectionWorld(0.1, 80., 100.)
+    my_world = IntersectionWorld(0.1, 80., 100.)
 
-    scenario1 = scenarios.scenario1(world)
+    scenario1 = scenarios.scenario1(my_world)
 
-    sim = Simulator(scenario1, T=20., dt=0.1)
+    sim = Simulator(scenario1, T=15., dt=0.1)
     sim.run()

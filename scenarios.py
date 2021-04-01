@@ -10,24 +10,13 @@ def scenario1(world: IntersectionWorld):
     Scenario 1
     Straight intersection, two approaching cars, ego vehicle turns left, automated vehicle goes straight
     :param world: world in which to run the scenario
-    :param dt: time step
     """
 
-    # add ego vehicle (hardcoded inputs)
-    # at stop sign at the intersection, accelerated and turns left
-    # u = np.zeros((2, world.time_vector.shape[0]))
-    # idx_turn = random.randint(0 / dt, 3 / dt)
-    # u[0, idx_turn:idx_turn + int(1.45 / dt)] = 0.455
-    # u[1, idx_turn:idx_turn + int(4 / dt)] = 0.5
-    # car_human = agents.CarHardCoded(center=Point(world.p_intersection.x + 2 * world.lane_width / 4.,
-    #                                            world.p_intersection.y - 2 * world.lane_width / 2. - 3.),
-    #                               heading=np.pi / 2., control_input=u, color='blue')
-
     # simulated human car
-    human_model = human_models.HumanModelDelayedThreshold(critical_gap=20,
-                                                          noise_intensity=10,
-                                                          delay_mean=0.8,
-                                                          delay_std=0.3)
+    # human_model = human_models.HumanModelDelayedThreshold(critical_gap=20,
+    #                                                       noise_intensity=10,
+    #                                                       delay_mean=0.8,
+    #                                                       delay_std=0.3)
 
     human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=40,
                                                               boundary=1,
@@ -39,7 +28,7 @@ def scenario1(world: IntersectionWorld):
     world.agents.update({'human': car_human})
 
     # add AV
-    car_av = agents.CarMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=25 / 3.6, world=world, color='yellow')
+    car_av = agents.CarMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=25 / 3.6, world=world, color='blue')
     world.agents.update({'av': car_av})
 
     # specify the

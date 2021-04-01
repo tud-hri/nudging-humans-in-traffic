@@ -1,5 +1,3 @@
-import copy
-
 import pygame
 from casadi import *
 from pygame.locals import *
@@ -12,13 +10,13 @@ from utils import coordinate_transform
 
 class Car:
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
-        x0 = np.array([p0[0], p0[1], phi0, v0])  # initial condition
+        x0 = np.array([[p0[0]], [p0[1]], [phi0], [v0]])  # initial condition
         self.world = world
         self.dt = world.dt
         self.dynamics = CarDynamics(self.dt, x0=x0)
         self.u = np.zeros((3, 1))  # [acceleration, deceleration, steering]
         self.x = x0  # [x, y, phi, v]
-        self.trajectory = Trajectory(x0, self.u)
+        self.trajectory = Trajectory(x0=x0, u0=self.u)
         self.world = world
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
@@ -160,7 +158,8 @@ class CarMPC(Car):
         self.obstacles = None
         self.p_opti_x_obstacles = None  # placeholder - self.opti.parameter value to communicate the obstacle states to the solver
 
-        self.set_constraints()  # set optimization problem constraints
+        # set optimization problem constraints
+        self.set_constraints()
 
         # setup solver
         p_opts = {'expand': True, 'print_time': 0}  # print_time stops printing the solver timing
@@ -225,8 +224,9 @@ class CarMPC(Car):
                 self.cost_function += self.theta[4] * sum2(shoulder.feature_shoulder(c=3., x=self.x_opti))
 
         # add collision object features
-        # fixme: needs better explanations
-        # 1. store the obstacle list, 2. create CasADi optimization parameters that are used to update the obstacle's state in the opti problem, 3. create the objective function in CasADi symbolics.
+        # 1. store the obstacle list,
+        # 2. create CasADi optimization parameters that are used to update the obstacle's state in the opti problem,
+        # 3. create the objective function in CasADi symbolics.
         self.obstacles = obstacles
         if obstacles is not None:
             self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
@@ -236,9 +236,10 @@ class CarMPC(Car):
                 )
 
         # input / control effort
-        r = np.diag([1., 0.1, 2.])  # relative weighting: considerably less weight on deceleration (encourage braking)
+        r = np.diag([1., 0.05, 1.5])  # relative weighting: considerably less weight on deceleration (encourage braking)
         self.cost_function += self.theta[6] * sumsqr(self.u_opti.T @ r @ self.u_opti)
 
+        # set cost to minimize
         self.opti.minimize(self.cost_function)
 
     def solve_opt_problem(self):
