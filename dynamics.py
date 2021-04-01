@@ -24,23 +24,23 @@ class CarDynamics:
 
         # create casadi symbolic representations of the state and input vectors
         x = vertcat(MX.sym('x'), MX.sym('y'), MX.sym('phi'), MX.sym('v'))  # state vector: [x, y, phi, v]
-        u = vertcat(MX.sym('a'), MX.sym('dr'))  # input vector: [a, dr]
+        u = vertcat(MX.sym('acc'), MX.sym('dec'), MX.sym('dr'))  # input vector: [a, dr]
 
         # simple bicycle dynamics, see https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225830
-        self.length = 4. # assume a car is 4 meters; this should be a variable, really, but can't be bothered, hehe
+        self.length = 4.  # assume a car is 4 meters; this should be a variable, really, but can't be bothered, hehe
         lr = self.length / 2.
         lf = lr
-        beta = atan(lr / (lf + lr) * tan(u[1]))
+        beta = atan(lr / (lf + lr) * tan(u[2]))
 
         # ODE
         ode = vertcat(x[3] * cos(x[2] + beta),
                       x[3] * sin(x[2] + beta),
                       x[3] / lr * sin(beta),
-                      u[0])
+                      u[0] + u[1])  # acceleration + deceleration
 
-        f = Function('f', [x, u], [ode], ['x', 'u'], ['ode'])  # create a function for ease of calling
+        f = Function('f', [x, u], [ode], ['x', 'u'], ['ode'])  # create a CasADi function
 
-        # set up casadi integrator (runge-kutta, because why not)
+        # set up CasADi integrator (runge-kutta, because why not)
         intg_opts = {'tf': dt,
                      'simplify': True,
                      'number_of_finite_elements': 4,  # number of intermediate integration steps
@@ -61,7 +61,7 @@ class CarDynamics:
 
     def integrate(self, x, u):
         """
-        Call the casadi integration function we created
+        Call the CasADi integration function we created
         :param x: np array, current state
         :param u: input vector
         :return: np array with the next state

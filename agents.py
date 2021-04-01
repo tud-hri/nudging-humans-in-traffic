@@ -1,3 +1,5 @@
+import copy
+
 import pygame
 from casadi import *
 from pygame.locals import *
@@ -14,7 +16,7 @@ class Car:
         self.world = world
         self.dt = world.dt
         self.dynamics = CarDynamics(self.dt, x0=x0)
-        self.u = np.zeros((2, 1))  # [acceleration, steering]
+        self.u = np.zeros((3, 1))  # [acceleration, deceleration, steering]
         self.x = x0  # [x, y, phi, v]
         self.trajectory = Trajectory(x0, self.u)
         self.world = world
@@ -32,7 +34,7 @@ class Car:
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics
         (e.g., as a CasADi function)
-        :param dt:
+        :param sim_time: simulation time stamp
         :return: car state
         """
         x_next = self.dynamics.integrate(self.x, self.u)
@@ -86,8 +88,10 @@ class Car:
 
     def text_state_render(self):
         font = pygame.font.SysFont("verdana", 12)
-        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f}; u_a: {4: .2f}, u_phi: {5: .2f}".format(self.x[0, 0], self.x[1, 0], self.x[2, 0],
-                                                                                                            self.x[3, 0], self.u[0, 0], self.u[1, 0])  #
+        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f} | u_a: {4:+.2f}, u_d: {5:-.2f}, u_dr: {6: .2f}".format(self.x[0, 0], self.x[1, 0],
+                                                                                                                           self.x[2, 0],
+                                                                                                                           self.x[3, 0], self.u[0, 0],
+                                                                                                                           self.u[1, 0], self.u[2, 0])  #
         return font.render(text, True, self.color)
 
     @property
@@ -135,12 +139,12 @@ class CarUserControlled(Car):
 class CarMPC(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'yellow'):
         super(CarMPC, self).__init__(p0, phi0, v0, world, color)
-        self.th = 1.5  # time horizon (2 seconds)
+        self.th = 2  # time horizon (2 seconds)
         self.Nh = round(self.th / self.dt)  # number of steps in time horizon
 
         # setup the optimizer through CasADi
         self.nx = self.x.shape[0]
-        self.nu = 2  # two inputs, accelerate and steer
+        self.nu = 3  # three inputs, accelerate, decelerate, and steer
         self.opti = casadi.Opti()  # Opti() facilitates the NLP problem definition and solver
 
         self.x_mpc = np.zeros((self.nx, 1))
@@ -167,10 +171,12 @@ class CarMPC(Car):
         for k in range(0, self.Nh):
             self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
-        self.opti.subject_to(self.opti.bounded(-15, self.u_opti[0, :], 10))
-        self.opti.subject_to(self.opti.bounded(-0.25 * np.pi, self.u_opti[1, :], 0.25 * np.pi))
-        self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))
-        self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])
+        self.opti.subject_to(self.opti.bounded(0., self.u_opti[0, :], 10.))  # acceleration, only positive, in m/s2
+        self.opti.subject_to(self.opti.bounded(-20., self.u_opti[1, :], 0.))  # deceleration, only negative, in m/s2
+        self.opti.subject_to(self.opti.bounded(-0.25 * np.pi, self.u_opti[2, :], 0.25 * np.pi))  # steering wheel input (rad)
+        self.opti.subject_to(sumsqr(self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
+        self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))  # speed
+        self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])  # initial condition for each solver call
 
         # # dynamic obstacle avoidance, based on Bruno Brito's paper: https://ieeexplore.ieee.org/document/8768044
         # phi_obstacle = self.p_opti_obstacle[2]
@@ -208,26 +214,30 @@ class CarMPC(Car):
 
         # add lane features
         if all_lanes is not None:
+            # remove primary lanes so that they are not counted double in the cost function
             for lane in all_lanes:
-                self.cost_function += self.theta[3] * sum2(lane.feature_lane_center(c=0.2, x=self.x_opti))
+                if lane not in primary_lanes:
+                    self.cost_function += self.theta[3] * sum2(lane.feature_lane_center(c=0.2, x=self.x_opti))
 
         # add shoulder features
         if road_shoulders is not None:
             for shoulder in road_shoulders:
-                self.cost_function += self.theta[4] * sum2(shoulder.feature_shoulder(c=2., x=self.x_opti))
+                self.cost_function += self.theta[4] * sum2(shoulder.feature_shoulder(c=3., x=self.x_opti))
 
         # add collision object features
-        #fixme: needs better explanations
+        # fixme: needs better explanations
         # 1. store the obstacle list, 2. create CasADi optimization parameters that are used to update the obstacle's state in the opti problem, 3. create the objective function in CasADi symbolics.
         self.obstacles = obstacles
         if obstacles is not None:
             self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
             for i in range(len(obstacles)):
                 self.cost_function += self.theta[5] * sum2(
-                    obstacles[i].feature_collision(sdx=4, sdy=1.5, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:,i]))
+                    obstacles[i].feature_collision(sdx=2.5, sdy=1.25, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:, i])
+                )
 
         # input / control effort
-        self.cost_function += self.theta[6] * sumsqr(self.u_opti)
+        r = np.diag([1., 0.1, 2.])  # relative weighting: considerably less weight on deceleration (encourage braking)
+        self.cost_function += self.theta[6] * sumsqr(self.u_opti.T @ r @ self.u_opti)
 
         self.opti.minimize(self.cost_function)
 
@@ -242,11 +252,13 @@ class CarMPC(Car):
             for i in range(len(self.obstacles)):
                 self.opti.set_value(self.p_opti_x_obstacles[:, i], self.obstacles[i].x)
 
-        sol = self.opti.solve()  # solve the problem!
+        # solve the problem!
+        sol = self.opti.solve()
 
         # select the first index for the control input
         u[0] = sol.value(self.u_opti)[0, 0]
         u[1] = sol.value(self.u_opti)[1, 0]
+        u[2] = sol.value(self.u_opti)[2, 0]
         self.x_mpc = sol.value(self.x_opti)
 
         # except Exception as e:
@@ -293,7 +305,3 @@ class CarSimulatedHuman(CarMPC):
             super().calculate_action(sim_time)  # let MPC set the input for the car
             if self.x[0] < 20.:
                 self.is_turn_completed = True
-
-            # super().set_input(*((self.steer, self.acceleration) if not self.is_turn_completed else (0, 0)))
-            # if self.time_elapsed > self.t_decision + self.turning_time:
-            #     self.is_turn_completed = True
