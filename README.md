@@ -23,6 +23,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## Doing
 
+- [x] Data visualization: plot state after simulation run
 
 
 ## Done

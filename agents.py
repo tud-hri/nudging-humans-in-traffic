@@ -172,7 +172,7 @@ class CarMPC(Car):
 
         self.opti.subject_to(self.opti.bounded(0., self.u_opti[0, :], 10.))  # acceleration, only positive, in m/s2
         self.opti.subject_to(self.opti.bounded(-20., self.u_opti[1, :], 0.))  # deceleration, only negative, in m/s2
-        self.opti.subject_to(self.opti.bounded(-0.25 * np.pi, self.u_opti[2, :], 0.25 * np.pi))  # steering wheel input (rad)
+        self.opti.subject_to(self.opti.bounded(-0.5 * np.pi, self.u_opti[2, :], 0.5 * np.pi))  # steering wheel input (rad)
         self.opti.subject_to(sumsqr(self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
         self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))  # speed
         self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])  # initial condition for each solver call
@@ -236,7 +236,7 @@ class CarMPC(Car):
                 )
 
         # input / control effort
-        r = np.diag([1., 0.05, 1.5])  # relative weighting: considerably less weight on deceleration (encourage braking)
+        r = np.diag([1., 0., 2.5])  # relative weighting: considerably less weight on deceleration (encourage braking)
         self.cost_function += self.theta[6] * sumsqr(self.u_opti.T @ r @ self.u_opti)
 
         # set cost to minimize

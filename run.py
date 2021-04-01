@@ -13,7 +13,7 @@ dt = 0.1  # 20 ms time step
 # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
 world = IntersectionWorld(dt=dt, width=80., height=80.)
 
-for i in range(5):
+for i in range(1):
     # run a scenario in this world
     scenarios.scenario1(world=world)
     sim = Simulator(world, end_time=7., ppm=8)

@@ -36,6 +36,6 @@ def scenario1(world: IntersectionWorld):
     car_human.set_objective(theta=theta_human, primary_lanes=[world.lanes[0], world.lanes[2]], all_lanes=world.lanes, obstacles=[car_av], road_shoulders=[world.shoulders[0], world.shoulders[2]],
                             heading=np.pi)
 
-    theta_av = [1., 2., -5., -3., 500., 2000., 1.]  # velocity, heading, primary_lane, all_lanes, road_shoulder, obstacle, input
+    theta_av = [0.25, 2., -5., -3., 500., 2000., 1.]  # velocity, heading, primary_lane, all_lanes, road_shoulder, obstacle, input
     car_av.set_objective(theta=theta_av, primary_lanes=[world.lanes[3]], all_lanes=[world.lanes[2], world.lanes[3]], obstacles=[car_human],
                          road_shoulders=[world.shoulders[1], world.shoulders[2]], heading=-np.pi / 2.)

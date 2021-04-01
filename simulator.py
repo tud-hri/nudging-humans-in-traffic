@@ -89,20 +89,20 @@ class Simulator:
         # velocity
         axs[0].plot(human.t, human.x[3, :], color=self.world.agents["human"].color)
         axs[0].plot(av.t, av.x[3, :], color=self.world.agents["av"].color)
-        axs[0].set_xlabel('t, s')
+        # axs[0].set_xlabel('t, s')
         axs[0].set_ylabel('$v$, m/s')
         axs[0].legend(['human', 'av'])
 
         # phi
         axs[1].plot(human.t, human.x[2, :], color=self.world.agents["human"].color)
         axs[1].plot(av.t, av.x[2, :], color=self.world.agents["av"].color)
-        axs[1].set_xlabel('t, s')
+        # axs[1].set_xlabel('t, s')
         axs[1].set_ylabel('$\psi$, rad')
 
         # acceleration / deceleration
         axs[2].plot(human.t, human.u[0, :] + human.u[1, :], color=self.world.agents["human"].color)
         axs[2].plot(av.t, av.u[0, :] + av.u[1, :], color=self.world.agents["av"].color)
-        axs[2].set_xlabel('t, s')
+        # axs[2].set_xlabel('t, s')
         axs[2].set_ylabel('$u_{acc}$, rad')
 
         # steering wheel
