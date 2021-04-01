@@ -224,7 +224,7 @@ class CarMPC(Car):
             self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
             for i in range(len(obstacles)):
                 self.cost_function += self.theta[5] * sum2(
-                    obstacles[i].feature_collision(sdx=3, sdy=1.5, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:,i]))
+                    obstacles[i].feature_collision(sdx=4, sdy=1.5, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:,i]))
 
         # input / control effort
         self.cost_function += self.theta[6] * sumsqr(self.u_opti)

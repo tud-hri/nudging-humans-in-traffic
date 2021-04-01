@@ -35,11 +35,11 @@ def scenario1(world: IntersectionWorld):
                                                               diffusion_rate=1,
                                                               dt=world.dt)
 
-    car_human = agents.CarSimulatedHuman(p0=[40., 15.], v0=0., phi0=np.pi / 2., world=world, human_model=human_model, dt=world.dt, color='red')
+    car_human = agents.CarSimulatedHuman(p0=[40., 20.], v0=0., phi0=np.pi / 2., world=world, human_model=human_model, color='red')
     world.agents.update({'human': car_human})
 
     # add AV
-    car_av = agents.CarMPC(p0=[37., 55.], phi0=-np.pi / 2., v0=25 / 3.6, world=world, dt=world.dt, color='yellow')
+    car_av = agents.CarMPC(p0=[37., 65.], phi0=-np.pi / 2., v0=25 / 3.6, world=world, color='yellow')
     world.agents.update({'av': car_av})
 
     # add rewards to cars
@@ -47,6 +47,6 @@ def scenario1(world: IntersectionWorld):
     car_human.set_objective(theta=theta_human, primary_lanes=[world.lanes[0], world.lanes[2]], all_lanes=world.lanes, obstacles=[car_av], road_shoulders=[world.shoulders[0], world.shoulders[2]],
                             heading=np.pi)
 
-    theta_av = [1., 2., -3., -4., 100., 1000., 2.]  # velocity, heading, primary_lane, all_lanes, road_shoulder, obstacle, input
+    theta_av = [0.5, 2., -6., 1, 100., 2000., .5]  # velocity, heading, primary_lane, all_lanes, road_shoulder, obstacle, input
     car_av.set_objective(theta=theta_av, primary_lanes=[world.lanes[3]], all_lanes=[world.lanes[2], world.lanes[3]], obstacles=[car_human],
                          road_shoulders=[world.shoulders[1], world.shoulders[2]], heading=-np.pi / 2.)
