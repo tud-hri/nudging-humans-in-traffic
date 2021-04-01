@@ -23,8 +23,8 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## Doing
 
-- [ ] Add simple obstacle avoidance to the MPC cost function - Niek (see branch [`mpc-obstacle-avoidance`](https://github.com/tud-hri/cognitive-av/tree/mpc-obstacle-avoidance))
-- [x] ~Draw the planned trajectory - Niek~
+- [ ] Implement relative input weights
+- [ ] Split acceleration and deceleration inputs
 
 ## Done
 
@@ -52,6 +52,8 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [x] ~Add text rendering to simulator for basic info - Niek~
 - [x] ~Check out the papers from Jayaraman - Arkady - 02/03~
     - [x] ~Write down our original contribution~
+- [x] ~Add simple obstacle avoidance to the MPC cost function - Niek ~
+- [x] ~Draw the planned trajectory - Niek~
 
 ## Run
 
