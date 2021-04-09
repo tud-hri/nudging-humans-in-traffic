@@ -57,6 +57,10 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [x] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
 - [x] Data visualization: plot state after simulation run
 
+## Policy
+
+See this note: [av-policy.md](av-policy.md)
+
 ## Run
 
 As a first step we created an example scenario with an intersection, an ego vehicle turning left, and an oncoming AV (hardcoded actions for now).
