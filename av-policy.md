@@ -7,12 +7,13 @@
 **Option 1**: directly / explicitly model parameters in cost function
 _human centered_: 'the AV wants to help the human to facilitate his/her decision-making'
 
-![\begin{align*}
+![\color{white}
+\begin{align*}
 J_{t} &= J_{AV} + J_h\\
 J_h &= w_p \cdot -\left( p_{\text{turn}}(x_{av}, x_h)-0.5\right)^2 \quad\text{maximize/minimize probability of turn}\\
   &+w_{RT} \cdot RT(x_{av}, x_h) \quad \text{minimize response time}
 \end{align*}
-](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Cdisplaystyle+%5Cbegin%7Balign%2A%7D%0AJ_%7Bt%7D+%26%3D+J_%7BAV%7D+%2B+J_h%5C%5C%0AJ_h+%26%3D+w_p+%5Ccdot+-%5Cleft%28+p_%7B%5Ctext%7Bturn%7D%7D%28x_%7Bav%7D%2C+x_h%29-0.5%5Cright%29%5E2+%5Cquad%5Ctext%7Bmaximize%2Fminimize+probability+of+turn%7D%5C%5C%0A++%26%2Bw_%7BRT%7D+%5Ccdot+RT%28x_%7Bav%7D%2C+x_h%29+%5Cquad+%5Ctext%7Bminimize+response+time%7D%0A%5Cend%7Balign%2A%7D%0A)
+](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Cdisplaystyle+%5Ccolor%7Bwhite%7D%0A%5Cbegin%7Balign%2A%7D%0AJ_%7Bt%7D+%26%3D+J_%7BAV%7D+%2B+J_h%5C%5C%0AJ_h+%26%3D+w_p+%5Ccdot+-%5Cleft%28+p_%7B%5Ctext%7Bturn%7D%7D%28x_%7Bav%7D%2C+x_h%29-0.5%5Cright%29%5E2+%5Cquad%5Ctext%7Bmaximize%2Fminimize+probability+of+turn%7D%5C%5C%0A++%26%2Bw_%7BRT%7D+%5Ccdot+RT%28x_%7Bav%7D%2C+x_h%29+%5Cquad+%5Ctext%7Bminimize+response+time%7D%0A%5Cend%7Balign%2A%7D%0A)
 
 
 **Option 2**: indirect / human is an 'uncertain' dynamic obstacle; the AV accounts for this.
