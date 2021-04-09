@@ -18,12 +18,12 @@ J_h &= w_p \cdot -\left( p_{\text{turn}}(x_{av}, x_h)-0.5\right)^2 \quad\text{ma
 **Option 2**: indirect / human is an 'uncertain' dynamic obstacle; the AV accounts for this.
 _AV centeres_: 'the AV needs a model the human's decision making to predict the human's trajectory to take into account when planning (e.g. a dynamic obstacle)
 
-![\begin{align*}
+![\color{white}
+\begin{align*}
 J_{t} &= w_v\varphi_V+w_{cl} \varphi_{cl}+w_s\varphi_{\text{shoulder}} \\
 &+ p_{\text{turn}}(x_{AV}, x_{h}) \varphi_{\text{obstacle}}(x_{AV}, x_h) \quad \text{human is dynamic obstacle with a probability of turn, and response time (distribution).}
 \end{align*}
-
-](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Cdisplaystyle+%5Cbegin%7Balign%2A%7D%0AJ_%7Bt%7D+%26%3D+w_v%5Cvarphi_V%2Bw_%7Bcl%7D+%5Cvarphi_%7Bcl%7D%2Bw_s%5Cvarphi_%7B%5Ctext%7Bshoulder%7D%7D+%5C%5C%0A%26%2B+p_%7B%5Ctext%7Bturn%7D%7D%28x_%7BAV%7D%2C+x_%7Bh%7D%29+%5Cvarphi_%7B%5Ctext%7Bobstacle%7D%7D%28x_%7BAV%7D%2C+x_h%29+%5Cquad+%5Ctext%7Bhuman+is+dynamic+obstacle+with+a+probability+of+turn%2C+and+response+time+%28distribution%29.%7D%0A%5Cend%7Balign%2A%7D%0A)
+](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Cdisplaystyle+%5Ccolor%7Bwhite%7D%0A%5Cbegin%7Balign%2A%7D%0AJ_%7Bt%7D+%26%3D+w_v%5Cvarphi_V%2Bw_%7Bcl%7D+%5Cvarphi_%7Bcl%7D%2Bw_s%5Cvarphi_%7B%5Ctext%7Bshoulder%7D%7D+%5C%5C%0A%26%2B+p_%7B%5Ctext%7Bturn%7D%7D%28x_%7BAV%7D%2C+x_%7Bh%7D%29+%5Cvarphi_%7B%5Ctext%7Bobstacle%7D%7D%28x_%7BAV%7D%2C+x_h%29+%5Cquad+%5Ctext%7Bhuman+is+dynamic+obstacle+with+a+probability+of+turn%2C+and+response+time+%28distribution%29.%7D%0A%5Cend%7Balign%2A%7D%0A)
 
 ### Hypothesized scenarios
 
