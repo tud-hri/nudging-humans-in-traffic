@@ -2,7 +2,6 @@
 
 Arkady Zgonnikov & Niek Beckers
 
-
 Making automated vehicles more compatible with humans by endowing AVs with human-based cogntive decision-making algorithms.
 
 Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [model code](https://osf.io/x3ns6/).
@@ -10,21 +9,20 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 ## To do
 
 - [ ] Data visualization
-    - [ ] Visualize agent dynamics and human decision in real-time
-- [ ] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
+    - [ ] Visualize agent dynamics and human decision in real-time - Arkady
 - [ ] Prototype simple path planner in casadi - Niek 09/03
     - [ ] time step for integrator as parameter - Niek
-    - [ ] Investigate how hard it is to make MPC predict a human based on simple human model (linear cost function optimization)
-    - [ ] Look into speeding up casadi
+    - [ ] Look into speeding up casadi - Niek
 - [ ] Include cognitive model prediction into MPC - Arkady
-    - [ ] Write down the MPC's cost as a function of x and u
-    - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u  
+    - [ ] Create expected state (velocity) profiles and model predictions (p_{turn} and RT) - Arkady 
+    - [ ] Check if we can get the Jacobian of the model outputs (p_turn and RT) wrt u - Arkady/Niek/CasADi
+    - [ ] Include model parameters in cost function (option 1) - Niek
+    - [ ] Create python functions for RT and p (parameters: AV position, human position) - Arkady
 - [ ] Read up on the evidence accumulation model for left turns - Niek - 09/03
 
 ## Doing
 
-- [x] Data visualization: plot state after simulation run
-
+- [x] Write down the MPC's cost as a function of x and u - write the notes down
 
 ## Done
 
@@ -56,6 +54,8 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [x] ~Draw the planned trajectory - Niek~
 - [x] Implement relative input weights
 - [x] Split acceleration and deceleration inputs
+- [x] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
+- [x] Data visualization: plot state after simulation run
 
 ## Run
 
