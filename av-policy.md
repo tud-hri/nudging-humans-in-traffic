@@ -7,7 +7,7 @@
 **Option 1**: directly / explicitly model parameters in cost function
 _human centered_: 'the AV wants to help the human to facilitate his/her decision-making'
 
-$SE = \frac{\sigma}{\sqrt{n}}$
+<img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
 
 **Option 2**: indirect / human is an 'uncertain' dynamic obstacle; the AV accounts for this.
 _AV centeres_: 'the AV needs a model the human's decision making to predict the human's trajectory to take into account when planning (e.g. a dynamic obstacle)
