@@ -18,11 +18,11 @@ def scenario1(world: IntersectionWorld):
     #                                                       delay_mean=0.8,
     #                                                       delay_std=0.3)
 
-    human_model = human_models.HumanModelEvidenceAccumulation(critical_gap=40,
-                                                              boundary=1,
-                                                              drift_rate=0.5,
-                                                              diffusion_rate=1,
-                                                              dt=world.dt)
+    human_model = human_models.HumanModelDDMStaticDrift(critical_gap=40,
+                                                        boundary=1,
+                                                        drift_rate=0.5,
+                                                        diffusion_rate=1,
+                                                        dt=world.dt)
 
     car_human = agents.CarSimulatedHuman(p0=[40., 20.], v0=0., phi0=np.pi / 2., world=world, human_model=human_model, color='red')
     world.agents.update({'human': car_human})
