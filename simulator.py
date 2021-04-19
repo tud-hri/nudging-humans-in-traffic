@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 from pygame.locals import *
+import pandas as pd
 
 import scenarios
 from intersection_world import IntersectionWorld
@@ -79,35 +80,42 @@ class Simulator:
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
         self.plot_stuff()
+        self.save_stuff()
+
+    def save_stuff(self):
+        human_trajectory = self.world.agents["human"].trajectory
+        av_trajectory = self.world.agents["av"].trajectory
+        human_trajectory.data.to_csv("data/human_trajectory.csv")
+        av_trajectory.data.to_csv("data/av_trajectory.csv")
 
     def plot_stuff(self):
-        human = self.world.agents["human"].trajectory
-        av = self.world.agents["av"].trajectory
+        human_trajectory = self.world.agents["human"].trajectory
+        av_trajectory = self.world.agents["av"].trajectory
 
         fig, axs = plt.subplots(4, 1)
 
         # velocity
-        axs[0].plot(human.t, human.x[3, :], color=self.world.agents["human"].color)
-        axs[0].plot(av.t, av.x[3, :], color=self.world.agents["av"].color)
+        axs[0].plot(human_trajectory.t, human_trajectory.x[3, :], color=self.world.agents["human"].color)
+        axs[0].plot(av_trajectory.t, av_trajectory.x[3, :], color=self.world.agents["av"].color)
         # axs[0].set_xlabel('t, s')
         axs[0].set_ylabel('$v$, m/s')
         axs[0].legend(['human', 'av'])
 
         # phi
-        axs[1].plot(human.t, human.x[2, :], color=self.world.agents["human"].color)
-        axs[1].plot(av.t, av.x[2, :], color=self.world.agents["av"].color)
+        axs[1].plot(human_trajectory.t, human_trajectory.x[2, :], color=self.world.agents["human"].color)
+        axs[1].plot(av_trajectory.t, av_trajectory.x[2, :], color=self.world.agents["av"].color)
         # axs[1].set_xlabel('t, s')
         axs[1].set_ylabel('$\psi$, rad')
 
         # acceleration / deceleration
-        axs[2].plot(human.t, human.u[0, :] + human.u[1, :], color=self.world.agents["human"].color)
-        axs[2].plot(av.t, av.u[0, :] + av.u[1, :], color=self.world.agents["av"].color)
+        axs[2].plot(human_trajectory.t, human_trajectory.u[0, :] + human_trajectory.u[1, :], color=self.world.agents["human"].color)
+        axs[2].plot(av_trajectory.t, av_trajectory.u[0, :] + av_trajectory.u[1, :], color=self.world.agents["av"].color)
         # axs[2].set_xlabel('t, s')
         axs[2].set_ylabel('$u_{acc}$, rad')
 
         # steering wheel
-        axs[3].plot(human.t, human.u[2, :], color=self.world.agents["human"].color)
-        axs[3].plot(av.t, av.u[2, :], color=self.world.agents["av"].color)
+        axs[3].plot(human_trajectory.t, human_trajectory.u[2, :], color=self.world.agents["human"].color)
+        axs[3].plot(av_trajectory.t, av_trajectory.u[2, :], color=self.world.agents["av"].color)
         axs[3].set_xlabel('t, s')
         axs[3].set_ylabel('$\delta_r$, rad')
 
@@ -119,6 +127,9 @@ if __name__ == '__main__':
     # a whole new woooooorld
     my_world = IntersectionWorld(0.1, 80., 100.)
 
+    # No one to tell us no
+    # Or where to go
+    # Or say we're only dreaming
     scenario1 = scenarios.scenario1(my_world)
 
     sim = Simulator(scenario1, T=15., dt=0.1)

@@ -1,5 +1,7 @@
 import numpy as np
 import ddm
+import math
+from scipy import interpolate
 
 
 class HumanModel:
@@ -27,10 +29,9 @@ class HumanModelDelayedThreshold(HumanModel):
         else:
             return None
 
-        self.pyddm_model = self.TimeVaryingDriftDDM()
-
 
 class HumanModelDDMStaticDrift(HumanModel):
+    # TODO: this will be obsolete one the dynamic drift model is implemented
     def __init__(self, critical_gap, boundary, drift_rate, diffusion_rate, dt):
         self.evidence = 0
         self.critical_gap = critical_gap
@@ -51,28 +52,29 @@ class HumanModelDDMStaticDrift(HumanModel):
 
 class HumanModelDDMDynamicDrift(HumanModel, ddm.Model):
     name = "Drift-diffusion model with the drift rate varying with oncoming vehicle's trajectory"
-    param_names = ["critical_gap", "boundary", "drift_rate", "diffusion_rate",
+    param_names = ["drift_rate", "alpha_d", "alpha_time_gap", "alpha_dtime_gap_dt", "theta", "boundary",
                    "nondecision_time_loc", "nondecision_time_scale"]
     # TODO: get rid of the hardcoded prediction horizon
     T_dur = 5
 
     class TimeVaryingDrift(ddm.Drift):
         name = "Drift dynamically depends on distance, velocity, and acceleration of the oncoming vehicle"
-        required_parameters = ["critical_gap", "boundary", "drift_rate", "diffusion_rate",
-                               "nondecision_time_loc", "nondecision_time_scale"]
-        required_conditions = ["x", "v", "a"]
+        required_parameters = ["drift_rate", "alpha_d", "alpha_time_gap", "alpha_dtime_gap_dt", "theta"]
+        required_conditions = ["time", "distance_gap", "time_gap", "dtime_gap_dt"]
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
 
         def get_drift(self, t, conditions, **kwargs):
-            #TODO: implement the trajectory-dependent drift using the below code as an example
-            # # not sure if passing x, v, and a arrays as conditions would work but worth trying
-            # v = conditions['d_condition'] / conditions['tta_condition']
-            # return (self.alpha * (conditions['tta_condition'] - t
-            #                       + self.beta * (conditions['d_condition'] - v * t) - self.theta))
-            pass
+            # TODO: passing arrays as conditions doesn't work; to fix, either bypass pyddm's checks or pass them as
+            #  extra arguments to the constructor (not sure how pyddm would react to that though...)
+            distance_gap_interp = interpolate.interp1d(conditions["time"], conditions["distance_gap"])
+            distance_gap_t = distance_gap_interp(t)
+            return self.drift_rate * (distance_gap_t - self.theta)
 
     def __init__(self):
         self.model = ddm.Model(
-            drift=self.TimeVaryingDrift(),
+            drift=self.TimeVaryingDrift(drift_rate=1, alpha_d=1, alpha_time_gap=1, alpha_dtime_gap_dt=1, theta=1),
             noise=ddm.NoiseConstant(noise=1),
             bound=ddm.BoundConstant(B=self.boundary),
             overlay=ddm.OverlayNonDecisionUniform(nondectime=self.nondecision_time_loc,
@@ -83,5 +85,14 @@ class HumanModelDDMDynamicDrift(HumanModel, ddm.Model):
         # TODO: simulate this using self.model.simulate_trial
         pass
 
-    def get_av_policy_cost(self, av_distance, av_velocity, av_acceleration):
-        pass
+    def get_av_policy_cost(self, distance_to_av, rel_velocity, rel_acceleration):
+        weight_p_turn = 0.5
+        weight_mean_rt = 0.5
+        solution = self.model.solve()
+        p_turn = solution.prob_correct()
+        mean_rt_turn = solution.mean_decision_time()
+        # FIXME: pyddm doesn't provide mean decision time for error (in our case, wait) decisions; submit a pull request
+        mean_rt_wait = math.fsum(solution.err * solution.model.t_domain()) / solution.prob_correct()
+        mean_rt = p_turn * mean_rt_turn + (1 - p_turn) * mean_rt_wait
+
+        return weight_p_turn * (p_turn - 0.5) ** 2 - weight_mean_rt * mean_rt
