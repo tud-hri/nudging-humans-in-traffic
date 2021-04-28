@@ -50,44 +50,47 @@ class HumanModelDDMStaticDrift(HumanModel):
             return None
 
 
-class HumanModelDDMDynamicDrift(HumanModel, ddm.Model):
+class HumanModelDDMDynamicDrift(HumanModel):
     name = "Drift-diffusion model with the drift rate varying with oncoming vehicle's trajectory"
-    param_names = ["drift_rate", "alpha_d", "alpha_time_gap", "alpha_dtime_gap_dt", "theta", "boundary",
-                   "nondecision_time_loc", "nondecision_time_scale"]
-    # TODO: get rid of the hardcoded prediction horizon
+    param_names = ["drift_rate", "alpha_d", "alpha_time_gap", "alpha_dtime_gap_dt", "theta",
+                   "boundary", "nondecision_time_loc", "nondecision_time_scale"]
+    weight_p_turn = 0.5
+    weight_mean_rt = 0.5
     T_dur = 5
 
     class TimeVaryingDrift(ddm.Drift):
-        name = "Drift dynamically depends on distance, velocity, and acceleration of the oncoming vehicle"
-        required_parameters = ["drift_rate", "alpha_d", "alpha_time_gap", "alpha_dtime_gap_dt", "theta"]
-        required_conditions = ["time", "distance_gap", "time_gap", "dtime_gap_dt"]
-
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
+        name = "Drift dynamically depends on distance to the oncoming vehicle"
+        required_parameters = ["drift_rate", "alpha_time_gap", "alpha_dtime_gap_dt", "theta",
+                               "distance_gap_interp", "time_gap_interp", "dtime_gap_dt_interp"]
 
         def get_drift(self, t, conditions, **kwargs):
-            # TODO: passing arrays as conditions doesn't work; to fix, either bypass pyddm's checks or pass them as
-            #  extra arguments to the constructor (not sure how pyddm would react to that though...)
-            distance_gap_interp = interpolate.interp1d(conditions["time"], conditions["distance_gap"])
-            distance_gap_t = distance_gap_interp(t)
-            return self.drift_rate * (distance_gap_t - self.theta)
+            return self.drift_rate * (self.distance_gap_interp(t)
+                                      + self.alpha_time_gap*self.time_gap_interp(t)
+                                      + self.alpha_dtime_gap_dt*self.dtime_gap_dt_interp(t)
+                                      - self.theta)
 
-    def __init__(self):
+    def __init__(self, drift_rate=None, alpha_time_gap=None, alpha_dtime_gap_dt=None, theta=None, boundary=None,
+                 nondecision_time_loc=None, nondecision_time_scale=None,
+                 t=None, distance_gap=None, time_gap=None, dtime_gap_dt=None):
+        distance_gap_interp = interpolate.interp1d(t, distance_gap)
+        time_gap_interp = interpolate.interp1d(t, time_gap)
+        dtime_gap_dt_interp = interpolate.interp1d(t, dtime_gap_dt)
+
         self.model = ddm.Model(
-            drift=self.TimeVaryingDrift(drift_rate=1, alpha_d=1, alpha_time_gap=1, alpha_dtime_gap_dt=1, theta=1),
+            # running time with time-varying drift: 10s :/
+            drift=self.TimeVaryingDrift(drift_rate=drift_rate, alpha_time_gap=alpha_time_gap,
+                                        alpha_dtime_gap_dt=alpha_dtime_gap_dt, theta=theta,
+                                        distance_gap_interp=distance_gap_interp, time_gap_interp=time_gap_interp,
+                                        dtime_gap_dt_interp=dtime_gap_dt_interp),
+            # running time with constant drift: 0.25s :/
+            # drift=ddm.DriftConstant(drift=0.2),
             noise=ddm.NoiseConstant(noise=1),
-            bound=ddm.BoundConstant(B=self.boundary),
-            overlay=ddm.OverlayNonDecisionUniform(nondectime=self.nondecision_time_loc,
-                                                  halfwidth=self.nondecision_time_scale),
+            bound=ddm.BoundConstant(B=boundary),
+            # TODO: investigate why adding simple nondecision time overlay sometimes throws an exception
+            # overlay=ddm.OverlayNonDecisionUniform(nondectime=nondecision_time_loc, halfwidth=nondecision_time_scale),
             T_dur=self.T_dur)
 
-    def get_decision(self, distance_gap, time_elapsed):
-        # TODO: simulate this using self.model.simulate_trial
-        pass
-
-    def get_av_policy_cost(self, distance_to_av, rel_velocity, rel_acceleration):
-        weight_p_turn = 0.5
-        weight_mean_rt = 0.5
+    def get_av_policy_cost(self):
         solution = self.model.solve()
         p_turn = solution.prob_correct()
         mean_rt_turn = solution.mean_decision_time()
@@ -95,4 +98,4 @@ class HumanModelDDMDynamicDrift(HumanModel, ddm.Model):
         mean_rt_wait = math.fsum(solution.err * solution.model.t_domain()) / solution.prob_correct()
         mean_rt = p_turn * mean_rt_turn + (1 - p_turn) * mean_rt_wait
 
-        return weight_p_turn * (p_turn - 0.5) ** 2 - weight_mean_rt * mean_rt
+        return -self.weight_p_turn * (p_turn - 0.5) ** 2 + self.weight_mean_rt * mean_rt
