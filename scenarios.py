@@ -65,6 +65,6 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av):
     world.agents.update({'av': car_av})
 
     # add human
-    car_human = agents.CarHumanInitiatedMPC(p0=[40., 23.], v0=0., phi0=np.pi / 2., world=world, color='blue')
+    car_human = agents.CarHumanInitiatedPD(p0=[40., 23.], v0=0., phi0=np.pi / 2., world=world, color='blue')
     world.agents.update({'human': car_human})
 

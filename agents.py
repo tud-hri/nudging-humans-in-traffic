@@ -308,9 +308,9 @@ class CarSimulatedHuman(CarMPC):
                 self.is_turn_completed = True
 
 
-class CarHumanInitiatedMPC(Car):
+class CarHumanInitiatedPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
-        super(CarHumanInitiatedMPC, self).__init__(p0, phi0, v0, world, color)
+        super(CarHumanInitiatedPD, self).__init__(p0, phi0, v0, world, color)
         self.decision_made = False
         self.v_des = 30. / 3.6
         self.phi_des = np.pi
