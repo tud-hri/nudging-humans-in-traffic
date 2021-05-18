@@ -311,11 +311,15 @@ class CarSimulatedHuman(CarMPC):
 class CarHumanInitiatedPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
         super(CarHumanInitiatedPD, self).__init__(p0, phi0, v0, world, color)
-        self.decision_made = False
+        self.decision_go = False
+        self.decision_stay = False
+
+        # desired state
         self.v_des = 30. / 3.6
         self.phi_des = np.pi
         self.y_des = 30.
 
+        # gains (proportional only for now)
         self.K_v = 2.
         self.K_y = 0.1
         self.K_psi = 1.
@@ -324,15 +328,16 @@ class CarHumanInitiatedPD(Car):
         keys = pygame.key.get_pressed()
 
         # if go key
-        if keys[K_LEFT] and not self.decision_made:
+        if keys[K_LEFT] and not self.decision_go:
             print("GO")
-            self.decision_made = True
+            self.decision_go = True
 
-        if keys[K_SPACE]:
+        if keys[K_s] and not self.decision_stay:
             print("STAY")
+            self.decision_stay = True
 
         # if decision is made, use a simple PD to control the car
-        if self.decision_made:
+        if self.decision_go:
             # super().calculate_action(sim_time)
             self.u = np.zeros((3, 1))
 
