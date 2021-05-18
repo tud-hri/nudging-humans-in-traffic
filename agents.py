@@ -306,3 +306,45 @@ class CarSimulatedHuman(CarMPC):
             super().calculate_action(sim_time)  # let MPC set the input for the car
             if self.x[0] < 20.:
                 self.is_turn_completed = True
+
+
+class CarHumanInitiatedMPC(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
+        super(CarHumanInitiatedMPC, self).__init__(p0, phi0, v0, world, color)
+        self.decision_made = False
+        self.v_des = 30. / 3.6
+        self.phi_des = np.pi
+        self.y_des = 30.
+
+        self.K_v = 2.
+        self.K_y = 0.1
+        self.K_psi = 1.
+
+    def calculate_action(self, sim_time: float):
+        keys = pygame.key.get_pressed()
+
+        # if go key
+        if keys[K_LEFT] and not self.decision_made:
+            print("GO")
+            self.decision_made = True
+
+        if keys[K_SPACE]:
+            print("STAY")
+
+        # if decision is made, use a simple PD to control the car
+        if self.decision_made:
+            # super().calculate_action(sim_time)
+            self.u = np.zeros((3, 1))
+
+            # acceleration
+            a = self.K_v * (self.v_des - self.x[3])
+            a = min(max(a, -10), 5)
+
+            if np.sign(a) == 1:
+                self.u[0] = a
+            elif np.sign(a) == -1:
+                self.u[1] = a
+
+            # steering
+            s = self.K_psi * (self.phi_des - self.x[2]) - self.K_y * (self.y_des - self.x[1])
+            self.u[2] = min(max(s, -np.pi), np.pi)

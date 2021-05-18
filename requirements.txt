@@ -2,3 +2,4 @@ pygame
 numpy
 casadi
 pyddm
+pandas

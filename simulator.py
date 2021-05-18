@@ -79,7 +79,7 @@ class Simulator:
                 running = False
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
-        self.plot_stuff()
+        # self.plot_stuff()
         self.save_stuff()
 
     def save_stuff(self):
