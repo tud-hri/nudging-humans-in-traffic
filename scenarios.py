@@ -5,10 +5,11 @@ import human_models
 from intersection_world import IntersectionWorld
 
 
-def scenario1(world: IntersectionWorld):
+def scenario_demo_1(world: IntersectionWorld):
     """
-    Scenario 1
-    Straight intersection, two approaching cars, ego vehicle turns left, automated vehicle goes straight
+    Demo scenario
+    Straight intersection, two approaching cars, ego vehicle controlled by a simulated human turns left,
+    automated vehicle goes straight
     :param world: world in which to run the scenario
     """
 
@@ -41,7 +42,6 @@ def scenario1(world: IntersectionWorld):
     theta_av = [0.25, 2., -5., -3., 500., 2000., 1.]  # velocity, heading, primary_lane, all_lanes, road_shoulder, obstacle, input
     car_av.set_objective(theta=theta_av, primary_lanes=[world.lanes[3]], all_lanes=[world.lanes[2], world.lanes[3]], obstacles=[car_human],
                          road_shoulders=[world.shoulders[1], world.shoulders[2]], heading=-np.pi / 2.)
-
 
 def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av):
     """

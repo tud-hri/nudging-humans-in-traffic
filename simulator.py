@@ -130,7 +130,7 @@ if __name__ == '__main__':
     # No one to tell us no
     # Or where to go
     # Or say we're only dreaming
-    scenario1 = scenarios.scenario1(my_world)
+    scenario1 = scenarios.scenario_demo_1(my_world)
 
     sim = Simulator(scenario1, T=15., dt=0.1)
     sim.run()
