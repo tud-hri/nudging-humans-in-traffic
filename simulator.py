@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 from pygame.locals import *
-import pandas as pd
 
 import scenarios
 from intersection_world import IntersectionWorld
@@ -80,13 +79,13 @@ class Simulator:
                 print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
         # self.plot_stuff()
-        self.save_stuff()
+        # self.save_stuff()
 
-    def save_stuff(self):
+    def save_stuff(self, filename='trajectory'):
         human_trajectory = self.world.agents["human"].trajectory
         av_trajectory = self.world.agents["av"].trajectory
-        human_trajectory.data.to_csv("data/human_trajectory.csv")
-        av_trajectory.data.to_csv("data/av_trajectory.csv")
+        human_trajectory.data.to_csv("data/human_" + filename + ".csv")
+        av_trajectory.data.to_csv("data/av_" + filename + ".csv")
 
     def plot_stuff(self):
         human_trajectory = self.world.agents["human"].trajectory
