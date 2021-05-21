@@ -53,8 +53,8 @@ if __name__ == "__main__":
     conditions = get_conditions(n_repetitions=n_rep)
 
     for i, (d_condition, v_condition, a_condition) in enumerate(conditions):
-        print(i)
-        print(d_condition, v_condition, a_condition)
+        print(f"Trial {i}")
+        print(f"Distance {d_condition:.0f} m", f"Speed {3.6*v_condition:.1f} km/h", f"Acceleration {a_condition:.2f} m/s^2")
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=v_condition, a_av=a_condition)
@@ -64,5 +64,5 @@ if __name__ == "__main__":
         sim.run()
         # and save stuff (just a proposal for filename coding)
         # sim.save_stuff(filename="d{0:d}_v{1:d}_a{2:d}".format(int(d_condition), int(v_condition), int(a_condition)))
-        write_log(log_file_path, [participant_id, d_condition, v_condition, a_condition,
-                                  sim.world.agents["human"].decision, sim.world.agents["human"].response_time])
+        write_log(log_file_path, [participant_id, int(d_condition), f"{v_condition:.2f}", f"{a_condition:.2f}",
+                                  sim.world.agents["human"].decision, f"{sim.world.agents['human'].response_time:.3f}"])
