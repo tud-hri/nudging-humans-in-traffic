@@ -80,16 +80,18 @@ class Car:
             dh = casadi.cos(theta) * d[0] - casadi.sin(theta) * d[1]
             dw = casadi.sin(theta) * d[0] + casadi.cos(theta) * d[1]
 
-            f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (sdy * sqrt(2. * np.pi)) * casadi.exp(
+            f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (
+                        sdy * sqrt(2. * np.pi)) * casadi.exp(
                 -0.5 * dw ** 2 / sdy ** 2)
         return f
 
     def text_state_render(self):
         font = pygame.font.SysFont("verdana", 12)
-        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f} | u_a: {4:+.2f}, u_d: {5:-.2f}, u_dr: {6: .2f}".format(self.x[0, 0], self.x[1, 0],
-                                                                                                                           self.x[2, 0],
-                                                                                                                           self.x[3, 0], self.u[0, 0],
-                                                                                                                           self.u[1, 0], self.u[2, 0])  #
+        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f} | u_a: {4:+.2f}, u_d: {5:-.2f}, u_dr: {6: .2f}".format(
+            self.x[0, 0], self.x[1, 0],
+            self.x[2, 0],
+            self.x[3, 0], self.u[0, 0],
+            self.u[1, 0], self.u[2, 0])  #
         return font.render(text, True, self.color)
 
     @property
@@ -168,12 +170,15 @@ class CarMPC(Car):
 
     def set_constraints(self):
         for k in range(0, self.Nh):
-            self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
+            self.opti.subject_to(
+                self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
         self.opti.subject_to(self.opti.bounded(0., self.u_opti[0, :], 10.))  # acceleration, only positive, in m/s2
         self.opti.subject_to(self.opti.bounded(-20., self.u_opti[1, :], 0.))  # deceleration, only negative, in m/s2
-        self.opti.subject_to(self.opti.bounded(-0.5 * np.pi, self.u_opti[2, :], 0.5 * np.pi))  # steering wheel input (rad)
-        self.opti.subject_to(sumsqr(self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
+        self.opti.subject_to(
+            self.opti.bounded(-0.5 * np.pi, self.u_opti[2, :], 0.5 * np.pi))  # steering wheel input (rad)
+        self.opti.subject_to(sumsqr(
+            self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
         self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))  # speed
         self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])  # initial condition for each solver call
 
@@ -229,10 +234,12 @@ class CarMPC(Car):
         # 3. create the objective function in CasADi symbolics.
         self.obstacles = obstacles
         if obstacles is not None:
-            self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
+            self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(
+                obstacles))  # assume obstacles have the same state [x,y,psi,v]
             for i in range(len(obstacles)):
                 self.cost_function += self.theta[5] * sum2(
-                    obstacles[i].feature_collision(sdx=2.5, sdy=1.25, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:, i])
+                    obstacles[i].feature_collision(sdx=2.5, sdy=1.25, x_eval=self.x_opti,
+                                                   x_ego_sym=self.p_opti_x_obstacles[:, i])
                 )
 
         # input / control effort
@@ -311,8 +318,10 @@ class CarSimulatedHuman(CarMPC):
 class CarHumanInitiatedPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
         super(CarHumanInitiatedPD, self).__init__(p0, phi0, v0, world, color)
-        self.decision_go = False
-        self.decision_stay = False
+        self.decision = None
+        self.response_time = None
+        # self.decision_go = False
+        # self.decision_stay = False
 
         # desired state
         self.v_des = 30. / 3.6
@@ -328,16 +337,19 @@ class CarHumanInitiatedPD(Car):
         keys = pygame.key.get_pressed()
 
         # if go key
-        if keys[K_LEFT] and not self.decision_go:
-            print("GO")
-            self.decision_go = True
+        if self.decision is None:
+            if keys[K_LEFT]:
+                self.decision = "go"
+            elif keys[K_s]:
+                self.decision = "stay"
 
-        if keys[K_s] and not self.decision_stay:
-            print("STAY")
-            self.decision_stay = True
+            if not (self.decision is None):
+                self.response_time = sim_time
+                print(f"Decision: {self.decision}")
+                print(f"Response time: {self.response_time:.3f}")
 
         # if decision is made, use a simple PD to control the car
-        if self.decision_go:
+        if self.decision == "go":
             # super().calculate_action(sim_time)
             self.u = np.zeros((3, 1))
 
