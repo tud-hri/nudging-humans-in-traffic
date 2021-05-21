@@ -61,7 +61,6 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av):
     elif np.sign(a_av) == -1:
         u_av[1] = a_av
     car_av.u = u_av
-
     world.agents.update({'av': car_av})
 
     # add human

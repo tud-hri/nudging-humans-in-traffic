@@ -35,6 +35,9 @@ class Car:
         :param sim_time: simulation time stamp
         :return: car state
         """
+        if self.x[3] <= 0.:
+            self.u = np.zeros((3, 1))
+
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
 
@@ -81,7 +84,7 @@ class Car:
             dw = casadi.sin(theta) * d[0] + casadi.cos(theta) * d[1]
 
             f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (
-                        sdy * sqrt(2. * np.pi)) * casadi.exp(
+                    sdy * sqrt(2. * np.pi)) * casadi.exp(
                 -0.5 * dw ** 2 / sdy ** 2)
         return f
 
