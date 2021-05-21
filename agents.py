@@ -35,8 +35,8 @@ class Car:
         :param sim_time: simulation time stamp
         :return: car state
         """
-        if self.x[3] <= 0.:
-            self.u = np.zeros((3, 1))
+        # if self.x[3] <= 0.:
+        #     self.u = np.zeros((3, 1))
 
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
