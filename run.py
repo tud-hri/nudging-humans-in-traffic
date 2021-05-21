@@ -10,24 +10,22 @@ from simulator import Simulator
 
 if __name__ == "__main__":
     # Run an example experiment
-    dt = 0.02  # 20 ms time step
+    dt = 1. / 60.  # 20 ms time step
 
     # create our world
     # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
     world = IntersectionWorld(dt=dt, width=60., height=120.)
 
+    n_rep = 10  # this needs to be implemented still
     # create experiment conditions (just some numbers)
-    accs = [-0.2, 0., 0.2]
-    v0s = [60. / 3.6, 80. / 3.6, 100. / 3.6]
-    d0s = [60., 80., 100.]
-
-    n_repetitions = 10  # this needs to be implemented still
+    accs = np.tile([-0.2, 0., 0.2], (1, n_rep))
+    v0s = np.tile([60. / 3.6, 80. / 3.6, 100. / 3.6], (1, n_rep))
+    d0s = np.tile([60., 80., 100.], (1, n_rep))
 
     # generate all possible combinations of accs, v0s, d0s
     combs = np.array(np.meshgrid(d0s, v0s, accs)).T.reshape(-1, 3)
     # randomize order
     order = np.random.permutation(combs.shape[0])
-
     conditions = combs[order, :]
 
     for i in range(0, conditions.shape[0]):

@@ -10,7 +10,7 @@ __pycache__/
 *.so
 
 # csv data files
-./data/*.csv
+data/*.csv
 ./img
 
 # Distribution / packaging
