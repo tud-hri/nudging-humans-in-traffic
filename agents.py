@@ -319,7 +319,7 @@ class CarHumanInitiatedPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
         super(CarHumanInitiatedPD, self).__init__(p0, phi0, v0, world, color)
         self.decision = None
-        self.response_time = None
+        self.response_time = -1
         # self.decision_go = False
         # self.decision_stay = False
 
