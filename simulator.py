@@ -28,6 +28,7 @@ class Simulator:
     def run(self):
         running = True
         paused = False
+        kill_switch_pressed = False
         t0 = pygame.time.get_ticks()
         counter = 0
 
@@ -35,9 +36,12 @@ class Simulator:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
+                    continue
                 elif event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         running = False
+                        kill_switch_pressed = True
+                        return kill_switch_pressed
                     if event.key == K_SPACE:
                         paused = not paused
 
@@ -51,7 +55,6 @@ class Simulator:
             self.world.tick(self.t[counter])
 
             # time keeping
-
             t_elapsed = (pygame.time.get_ticks() - t0) * 1e-3
 
             # draw the world
