@@ -35,8 +35,9 @@ class Car:
         :param sim_time: simulation time stamp
         :return: car state
         """
-        # if self.x[3] <= 0.:
-        #     self.u = np.zeros((3, 1))
+        # stop the car!
+        if any(self.u[0:2] < 0) and self.x[3] <= 0.:
+            self.u = np.zeros((3, 1))
 
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
@@ -333,8 +334,8 @@ class CarHumanInitiatedPD(Car):
 
         # gains (proportional only for now)
         self.K_v = 2.
-        self.K_y = 0.1
-        self.K_psi = 1.
+        self.K_y = 0.2
+        self.K_psi = .95
 
     def calculate_action(self, sim_time: float):
         keys = pygame.key.get_pressed()
