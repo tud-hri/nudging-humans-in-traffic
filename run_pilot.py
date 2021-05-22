@@ -59,7 +59,7 @@ if __name__ == "__main__":
     for i, (d_condition, tau_condition, a_condition) in enumerate(conditions):
         print(f"Trial {i}")
         print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", f"Acceleration {a_condition:.2f} m/s^2")
+              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", f"Acceleration {a_condition:.2f} m/s^2", "collision")
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition)
@@ -74,4 +74,4 @@ if __name__ == "__main__":
 
         # and save stuff (just a proposal for filename coding)
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", f"{a_condition:.2f}",
-                                  str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}"])
+                                  str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}", str(sim.collision_detected)])

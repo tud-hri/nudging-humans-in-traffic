@@ -17,6 +17,7 @@ class IntersectionWorld:
         self.lanes = []
         self.shoulders = []  # all the road shoulders, added to keep the cars on the road.
 
+        self.collision = []
         self.create_intersection()
 
     def create_intersection(self):
@@ -40,6 +41,8 @@ class IntersectionWorld:
         # apply action, integrate
         for agent in self.agents.values():
             agent.tick(sim_time)
+
+        self.collision = [a1.rect.colliderect(a2.rect) for a1 in self.agents.values() for a2 in self.agents.values() if a1 is not a2]
 
     def draw(self, window, ppm):
         window.fill((33, 138, 33))

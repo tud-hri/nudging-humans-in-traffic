@@ -21,6 +21,7 @@ class Car:
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
         self.color = color
+        self.rect = pygame.Rect(round(p0[0] * 10), round(p0[1] * 10), 10, 10)
 
         self.image = pygame.image.load("img/car-{0}.png".format(self.color))
 
@@ -54,10 +55,10 @@ class Car:
         img = pygame.transform.rotate(img, np.rad2deg(self.x[2]))
 
         # calculate center position for drawing
-        img_rect = img.get_rect()
-        img_rect.center = (p[0, 0], p[1, 0])
+        self.rect = img.get_rect()
+        self.rect.center = (p[0, 0], p[1, 0])
 
-        window.blit(img, img_rect)
+        window.blit(img, self.rect)
 
     def __str__(self):
         return "state: {}".format(self.x.T)

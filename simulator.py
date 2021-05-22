@@ -17,6 +17,8 @@ class Simulator:
         self.ppm = ppm  # pixel per meter
         self.realtime = realtime  # should the sim go 'soft' real time or AFAP?
 
+        self.collision_detected = False
+
         # setup pygame, create a window if we're going to visualize things
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -32,6 +34,8 @@ class Simulator:
         t0 = pygame.time.get_ticks()
         counter = 0
 
+        self.collision_detected = False
+
         while running:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -39,7 +43,7 @@ class Simulator:
                     continue
                 elif event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        running = False
+                        # running = False
                         kill_switch_pressed = True
                         return kill_switch_pressed
                     if event.key == K_SPACE:
@@ -53,6 +57,9 @@ class Simulator:
 
             # do all the functional stuff here
             self.world.tick(self.t[counter])
+
+            if not self.collision_detected:
+                self.collision_detected = any(self.world.collision)
 
             # time keeping
             t_elapsed = (pygame.time.get_ticks() - t0) * 1e-3
