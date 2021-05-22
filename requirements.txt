@@ -3,3 +3,4 @@ numpy
 casadi
 pyddm
 pandas
+seaborn

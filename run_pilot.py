@@ -2,11 +2,12 @@
 Our world: an intersection with left-turn scenario
 '''
 
-from datetime import datetime
-import os
-import scenarios
-import random
 import csv
+import os
+import random
+from datetime import datetime
+
+import scenarios
 from intersection_world import IntersectionWorld
 from simulator import Simulator
 
@@ -18,8 +19,11 @@ def get_conditions(n_repetitions):
     a_conditions = [-2.0, 0., 4.0]
 
     conditions = ([(d, tau, a) for d in d_conditions for tau in tau_conditions for a in a_conditions] * n_repetitions)
-
     random.shuffle(conditions)
+
+    # add 5 trials with a car that is (almost) standing still for getting used to the
+    conditions = [(60, 100., 0), (60, 100., 0), (60, 100., 0), (60, 100., 0)] + conditions
+
     return conditions
 
 
@@ -55,10 +59,10 @@ if __name__ == "__main__":
     for i, (d_condition, tau_condition, a_condition) in enumerate(conditions):
         print(f"Trial {i}")
         print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-              f"Speed {3.6*d_condition/tau_condition:.2f} km/h", f"Acceleration {a_condition:.2f} m/s^2")
+              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", f"Acceleration {a_condition:.2f} m/s^2")
 
         # run a scenario in this world
-        scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition/tau_condition, a_av=a_condition)
+        scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition)
         sim = Simulator(world, end_time=5., ppm=12)
 
         # run stuff
