@@ -33,7 +33,7 @@ def initialize_log(participant_id):
                                  + datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M") + ".csv")
     with open(log_file_path, "w", newline="") as fp:
         writer = csv.writer(fp, delimiter="\t")
-        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "decision", "RT"])
+        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "decision", "RT", "collision"])
     return log_file_path
 
 
