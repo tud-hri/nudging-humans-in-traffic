@@ -1,5 +1,14 @@
 # Notes AV policy
 
+## 250521
+
+See to-do as well
+
+Main decision: go for open-loop experiment first before continuing to optimization implementation
+
+![20210525-notes-meeting-approach](https://user-images.githubusercontent.com/11727203/119492510-72c52e80-bd5f-11eb-81bb-e5cd726baaf3.png)
+
+
 ## 080421
 
 ### Implementation of the human's cognitive model in the AV's policy.
