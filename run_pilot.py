@@ -76,6 +76,8 @@ if __name__ == "__main__":
             print("Experiment killed")
             break
 
+
+
         # and save stuff (just a proposal for filename coding)
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
