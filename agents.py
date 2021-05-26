@@ -25,10 +25,10 @@ class Car:
 
         self.image = pygame.image.load("img/car-{0}.png".format(self.color))
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         pass
 
-    def tick(self, sim_time: float):
+    def tick(self, sim_time: float, step: int):
         """
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics
@@ -36,9 +36,6 @@ class Car:
         :param sim_time: simulation time stamp
         :return: car state
         """
-        # stop the car!
-        if any(self.u[0:2] < 0) and self.x[3] <= 0.:
-            self.u = np.zeros((3, 1))
 
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
@@ -108,13 +105,35 @@ class Car:
         return self.x[3]
 
 
+class CarPredefinedControl(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'blue'):
+        super(CarPredefinedControl, self).__init__(p0, phi0, v0, world, color)
+        self.u_predefined = np.zeros(self.u.shape)
+
+    def calculate_action(self, sim_time: float, step: int):
+        # select the action from the predefined control trace
+
+        # cap step within bounds of u_predefined
+        step = min(max(0, step), self.u_predefined.shape[1] - 1)
+
+        self.u = self.u_predefined[:, [step]]
+
+        # constrain the car's velocity [0, 120km/h]
+        # stop the car if stopped.
+        if any(self.u[0:2] < 0) and self.x[3] <= 0.:
+            self.u[0:2] = 0.
+
+        if any(self.u[0:2] > 0) and self.x[3] >= 120./3.6:
+            self.u[0:2] = 0.
+
+
 class CarUserControlled(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'blue'):
         super(CarUserControlled, self).__init__(p0, phi0, v0, world, color)
         self.accelerate_int = 0.
         self.steer_int = 0.
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         accelerate_sensitivity = 2.  # [m/s2 / s]
         decelerate_sensitivity = 3.
         steer_sensitivity = 1.5 * np.pi  # [rad/s]
@@ -280,7 +299,7 @@ class CarMPC(Car):
 
         return u
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         self.u = self.solve_opt_problem()
 
     def draw(self, window, ppm):
@@ -302,7 +321,7 @@ class CarSimulatedHuman(CarMPC):
         self.t_decision = None
         self.is_turn_completed = False
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
         if self.decision is None:
             print("The simulated human is thinking...")
@@ -320,9 +339,9 @@ class CarSimulatedHuman(CarMPC):
                 self.is_turn_completed = True
 
 
-class CarHumanInitiatedPD(Car):
+class CarHumanTriggeredPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
-        super(CarHumanInitiatedPD, self).__init__(p0, phi0, v0, world, color)
+        super(CarHumanTriggeredPD, self).__init__(p0, phi0, v0, world, color)
         self.decision = None
         self.response_time = -1
         # self.decision_go = False
@@ -338,7 +357,7 @@ class CarHumanInitiatedPD(Car):
         self.K_y = 0.2
         self.K_psi = .95
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         keys = pygame.key.get_pressed()
 
         # if go key

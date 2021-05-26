@@ -33,15 +33,16 @@ class IntersectionWorld:
         self.shoulders.append(VShoulder([35, 0.], side='left'))  # shoulder left of vertical road
         self.shoulders.append(VShoulder([42, 0.], side='right'))  # shoulder right of vertical road
 
-    def tick(self, sim_time: float):
+    def tick(self, sim_time: float, step: int):
         # find action
         for agent in self.agents.values():
-            agent.calculate_action(sim_time)
+            agent.calculate_action(sim_time, step)
 
         # apply action, integrate
         for agent in self.agents.values():
-            agent.tick(sim_time)
+            agent.tick(sim_time, step)
 
+        # check for collisions among all agents
         self.collision = [a1.rect.colliderect(a2.rect) for a1 in self.agents.values() for a2 in self.agents.values() if a1 is not a2]
 
     def draw(self, window, ppm):

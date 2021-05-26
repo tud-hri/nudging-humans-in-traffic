@@ -8,7 +8,7 @@ from intersection_world import IntersectionWorld
 
 
 class Simulator:
-    def __init__(self, world, end_time: float, dt: float = 0.1, ppm: int = 6, realtime=True):
+    def __init__(self, world, end_time: float, ppm: int = 6, realtime=True):
         self.T = end_time
         self.dt = world.dt  # max freq = 50Hz
         self.N = round(self.T / self.dt)
@@ -56,7 +56,7 @@ class Simulator:
                 self.clock.tick(round(1. / self.dt))  # realtime, so wait a bit for the next tick/frame
 
             # do all the functional stuff here
-            self.world.tick(self.t[counter])
+            self.world.tick(self.t[counter], counter)
 
             if not self.collision_detected:
                 self.collision_detected = any(self.world.collision)
