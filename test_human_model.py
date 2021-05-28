@@ -7,7 +7,7 @@ import ddm.plot
 from datetime import datetime
 
 
-def plot_policy(t, distance_gap, time_gap, dtime_gap_dt):
+def plot_policy(t, distance_gap, time_gap, dtime_gap_dt, a):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
     ax1.plot(t, distance_gap)
     ax1.set_ylabel("distance gap, m", fontsize=12)
@@ -16,7 +16,8 @@ def plot_policy(t, distance_gap, time_gap, dtime_gap_dt):
     ax2.set_ylabel("time gap, s", fontsize=12)
 
     ax3.plot(t, dtime_gap_dt)
-    ax3.set_ylabel("time gap derivative", fontsize=12)
+    ax3.plot(t, a)
+    ax3.set_ylabel("time gap derivative / a", fontsize=12)
 
     ax3.set_xlabel("time, s", fontsize=12)
 
@@ -49,13 +50,14 @@ def test_get_policy_cost():
                            + (av_trajectory.y - human_trajectory.y[0]) ** 2)
     time_gap = distance_gap / av_trajectory.speed
     dtime_gap_dt = utils.get_derivative(t.to_numpy(), time_gap.to_numpy())
+    a = utils.get_derivative(t.to_numpy(), av_trajectory.speed.to_numpy())
 
     start_time = datetime.now()
     policy_cost = get_policy_cost(t, distance_gap, time_gap, dtime_gap_dt)
     print("Model running time: %s" % str(datetime.now() - start_time))
     print("Policy cost: %.2f" % policy_cost)
 
-    plot_policy(t, distance_gap, time_gap, dtime_gap_dt)
+    plot_policy(t, distance_gap, time_gap, dtime_gap_dt, a)
 
 
 test_get_policy_cost()
