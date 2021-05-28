@@ -9,10 +9,10 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 ## To do
 Primary
 - [ ] HREC application for open-loop experiments - Arkady
-- [ ] Arrange meeting with David before June 7, or else after 18 - Arkady
+- [x] Arrange meeting with David before June 7, or else after 18 - Arkady
 - [ ] Pilot the version 2 experiment - Arkady
 - [ ] Organize data collection for Thu/Fri - Arkady
-- [ ] Include decision moment in AV car - Niek
+- [x] Include decision moment in AV car - Niek
 
 For a later moment
 - [ ] Data visualization

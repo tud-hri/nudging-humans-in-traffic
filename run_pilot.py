@@ -17,7 +17,7 @@ def get_conditions(n_repetitions):
     d_conditions = [30., 60.]  # distance (m)
     tau_conditions = [3.5, 5.]  # TTA (s)
     a_conditions = [-2.0, 0., 4.0]  # acceleration (m/s2)
-    s_conditions = [0., 2.]  # decision point / states [in seconds from start]
+    s_conditions = [0., 0.5]  # decision point / states [in seconds from start]
 
     conditions = ([(d, tau, [a1, a2], s_conditions) for d in d_conditions for tau in tau_conditions for a1 in a_conditions for a2 in
                    a_conditions] * n_repetitions)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(conditions):
         print(f"Trial {i}")
         print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2", "collision")  # {a_condition[0]:.2f} m/s^2
+              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2")  # {a_condition[0]:.2f} m/s^2
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)

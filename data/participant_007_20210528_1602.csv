@@ -1,0 +1,11 @@
+participant_id	d_condition	tau_condition	a_condition	decision	RT	collision
+007	60	100.0	[0.0, 0.0]	go	3.720	False
+007	60	100.0	[0.0, 0.0]	go	2.420	False
+007	60	100.0	[0.0, 0.0]	go	3.520	False
+007	60	100.0	[0.0, 0.0]	go	3.200	False
+007	60	100.0	[0.0, 0.0]	go	4.200	False
+007	30	5.0	[-2.0, 4.0]	go	2.180	False
+007	30	3.5	[0.0, -2.0]	stay	2.100	False
+007	60	3.5	[4.0, 4.0]	stay	1.340	False
+007	30	5.0	[4.0, -2.0]	go	0.380	True
+007	30	3.5	[0.0, -2.0]	stay	1.560	False
