@@ -70,7 +70,7 @@ if __name__ == "__main__":
     all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep)
 
     # specify after which trials to have an automatic break; note: trials start at 0!
-    break_after_trial = [1, 29, 239]
+    break_after_trial = [29, 239]
 
     for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(all_trials):
         if i < len(training_trials):
@@ -84,7 +84,6 @@ if __name__ == "__main__":
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)
-
         sim = Simulator(world, end_time=t_end, ppm=10)
 
         # run stuff

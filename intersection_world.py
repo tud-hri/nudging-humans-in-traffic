@@ -52,6 +52,11 @@ class IntersectionWorld:
         for lane in self.lanes:
             lane.draw(window, ppm)
 
+        # draw lane lines
+        # line_color = (240, 240, 240)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.right, self.rect.bottom), 1)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.top), (self.rect.right, self.rect.top), 1)
+
         # draw agents
         state_text = []
         pos = (5, 5)

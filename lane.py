@@ -53,8 +53,8 @@ class HLane(Lane):
 
         # # draw road lines
         # line_color = (240, 240, 240)
-        # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.right, rect.bottom), 1)
-        # pygame.draw.line(window, line_color, (rect.left, rect.top), (rect.right, rect.top), 1)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.right, self.rect.bottom), 1)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.top), (self.rect.right, self.rect.top), 1)
 
     def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[1, :] - self.p0[1]) ** 2)
@@ -82,8 +82,8 @@ class VLane(Lane):
 
         # # draw road lines
         # line_color = (240, 240, 240)
-        # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.left, rect.top), 1)
-        # pygame.draw.line(window, line_color, (rect.right, rect.bottom), (rect.right, rect.top), 1)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.left, self.rect.top), 1)
+        # pygame.draw.line(window, line_color, (self.rect.right, self.rect.bottom), (self.rect.right, self.rect.top), 1)
 
     def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[0, :] - self.p0[0]) ** 2)
