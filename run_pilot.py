@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 50.  # 20 ms time step
     t_end = 5.  # simulation time
-    n_rep = 10  # number of repetitions per condition
+    n_rep = 20  # number of repetitions per condition
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
