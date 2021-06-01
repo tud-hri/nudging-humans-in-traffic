@@ -6,6 +6,7 @@ import csv
 import os
 import random
 from datetime import datetime
+import time
 
 import scenarios
 from intersection_world import IntersectionWorld
@@ -26,15 +27,16 @@ def get_conditions(n_repetitions):
                       [-2., -2.],
                       [4., 0.],
                       [4., 4.]]
+    conditions = [(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
-    conditions = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
-    random.shuffle(conditions)
+    test_trials = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
+    random.shuffle(test_trials)
 
     # add 5 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
-    c_training = [(60, 100., [0., 0.], s_conditions)]
-    conditions = c_training * 5 + conditions
+    training_trials = [(60, 100., [0., 0.], s_conditions)] * 2 + conditions
+    all_trials = training_trials + test_trials  # 2 TTA=100, all conditions 1x for training, then the repeated conditions
 
-    return conditions
+    return all_trials, training_trials, test_trials
 
 
 def initialize_log(participant_id):
@@ -57,25 +59,33 @@ if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 50.  # 20 ms time step
     t_end = 5.  # simulation time
-    n_rep = 20  # number of repetitions per condition
+    n_rep = 15  # number of repetitions per condition
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
 
     # create our world
     # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
-    world = IntersectionWorld(dt=dt, width=60., height=110.)
-    conditions = get_conditions(n_repetitions=n_rep)
+    world = IntersectionWorld(dt=dt, width=60., height=110., show_state_text=False)
+    all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep)
 
-    for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(conditions):
-        print(f"Trial {i}")
-        print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2",
-              "Acceleration changes at ", str(s_condition), "s")  # {a_condition[0]:.2f} m/s^2
+    # specify after which trials to have an automatic break; note: trials start at 0!
+    break_after_trial = [1, 29, 239]
+
+    for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(all_trials):
+        if i < len(training_trials):
+            print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
+        else:
+            print(f"TEST: Trial {i - len(training_trials) + 1} of {len(test_trials)}")
+
+        # print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
+        #       f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2",
+        #       "Acceleration changes at ", str(s_condition), "s")  # {a_condition[0]:.2f} m/s^2
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)
-        sim = Simulator(world, end_time=t_end, ppm=12)
+
+        sim = Simulator(world, end_time=t_end, ppm=10)
 
         # run stuff
         kill_switch = sim.run()
@@ -88,3 +98,15 @@ if __name__ == "__main__":
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
                                   str(sim.collision_detected)])  # f"{a_condition:.2f}"
+
+        # clean up
+        sim.quit()
+        del sim  # not sure if necessary
+
+        time.sleep(0.5)
+
+        # small break
+        if i in break_after_trial:
+            input("BREAK: Press Enter to continue")
+
+    print("EXPERIMENT DONE (FREEDOM!)")

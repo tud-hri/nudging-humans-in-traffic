@@ -2,7 +2,7 @@ from lane import VLane, HLane, VShoulder, HShoulder
 
 
 class IntersectionWorld:
-    def __init__(self, dt: float, width: float, height: float):
+    def __init__(self, dt: float, width: float, height: float, show_state_text=True):
         """
         The world our agents live in
         :param dt: simulation time step [second]
@@ -19,6 +19,7 @@ class IntersectionWorld:
 
         self.collision = []
         self.create_intersection()
+        self.show_state_text = show_state_text
 
     def create_intersection(self):
 
@@ -53,11 +54,10 @@ class IntersectionWorld:
 
         # draw agents
         state_text = []
-        for _, agent in self.agents.items():
-            agent.draw(window, ppm)
-            state_text.append(agent.text_state_render())
-
         pos = (5, 5)
-        for txt in state_text:
-            window.blit(txt, txt.get_rect(left=pos[0], top=pos[1]))
-            pos = (pos[0], txt.get_rect().bottom + 0.25 * txt.get_height())
+        for agent in self.agents.values():
+            agent.draw(window, ppm)
+            if self.show_state_text:
+                state_text = agent.text_state_render()
+                window.blit(state_text, state_text.get_rect(left=pos[0], top=pos[1]))
+                pos = (pos[0], state_text.get_rect().bottom + 0.25 * state_text.get_height())

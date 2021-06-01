@@ -23,7 +23,7 @@ class Simulator:
         pygame.init()
         self.clock = pygame.time.Clock()
         self.window = pygame.display.set_mode((int(self.world.width * self.ppm), int(self.world.height * self.ppm)))
-        pygame.display.set_caption('Mind-reading AVs')
+        pygame.display.set_caption('Should I stay or should I go 2.0')
         self.window.fill((33, 138, 33))  # green background
         pygame.display.flip()
 
@@ -43,7 +43,6 @@ class Simulator:
                     continue
                 elif event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        # running = False
                         kill_switch_pressed = True
                         return kill_switch_pressed
                     if event.key == K_SPACE:
@@ -67,7 +66,7 @@ class Simulator:
             # draw the world
             self.world.draw(self.window, self.ppm)
 
-            # simulator state
+            # simulator state (draw text)
             sim_state_text = ["t_real: {:.2f}".format(t_elapsed),
                               "t_sim: {:.2f}".format(self.t[counter])]
 
@@ -85,10 +84,13 @@ class Simulator:
 
             if self.dt * counter >= self.T:
                 running = False
-                print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
+                # print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
 
         # self.plot_stuff()
         # self.save_stuff()
+
+    def quit(self):
+        pygame.quit()
 
     def save_stuff(self, filename='trajectory'):
         human_trajectory = self.world.agents["human"].trajectory
