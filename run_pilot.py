@@ -19,8 +19,15 @@ def get_conditions(n_repetitions):
     a_conditions = [-2.0, 0., 4.0]  # acceleration (m/s2)
     s_conditions = [0., 0.5]  # decision point / states [in seconds from start]
 
-    conditions = ([(d, tau, [a1, a2], s_conditions) for d in d_conditions for tau in tau_conditions for a1 in a_conditions for a2 in
-                   a_conditions] * n_repetitions)
+    a_combinations = [[0., 0.],
+                      [0., 4.],
+                      [0., -2.0],
+                      [-2., 0.],
+                      [-2., -2.],
+                      [4., 0.],
+                      [4., 4.]]
+
+    conditions = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
     random.shuffle(conditions)
 
     # add 5 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
@@ -75,8 +82,6 @@ if __name__ == "__main__":
         if kill_switch:
             print("Experiment killed")
             break
-
-
 
         # and save stuff (just a proposal for filename coding)
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition),

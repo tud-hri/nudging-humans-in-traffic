@@ -54,6 +54,9 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
     def generate_u(dt, t_end, s, a):
         assert (len(s) == len(a))
 
+        # make sure s is in ascending order
+        s = np.sort(np.asarray(s))
+
         u = np.zeros((3, round(t_end / dt)))
         for i in range(len(s)):
             if np.sign(a[i]) == 1:
