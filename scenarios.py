@@ -59,12 +59,13 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
 
         u = np.zeros((3, round(t_end / dt)))
         for i in range(len(s)):
+            print(round(s[i] / dt))
             if np.sign(a[i]) == 1:
-                u[0, round(s[i] / dt):-1] = a[i]
-                u[1, round(s[i] / dt):-1] = 0.
+                u[0, int(round(s[i] / dt)):-1] = a[i]
+                u[1, int(round(s[i] / dt)):-1] = 0.
             elif np.sign(a[i]) == -1:
-                u[0, round(s[i] / dt):-1] = 0.
-                u[1, round(s[i] / dt):-1] = a[i]
+                u[0, int(round(s[i] / dt)):-1] = 0.
+                u[1, int(round(s[i] / dt)):-1] = a[i]
         return u
 
     y_crossing = 28.5  # y position of the crossing (hardcoded for now, ideally we should get it from the intersection world)

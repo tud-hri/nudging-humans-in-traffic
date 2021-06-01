@@ -70,7 +70,8 @@ if __name__ == "__main__":
     for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(conditions):
         print(f"Trial {i}")
         print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2")  # {a_condition[0]:.2f} m/s^2
+              f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2",
+              "Acceleration changes at ", str(s_condition), "s")  # {a_condition[0]:.2f} m/s^2
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)
