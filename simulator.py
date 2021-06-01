@@ -90,6 +90,9 @@ class Simulator:
         # self.plot_stuff()
         # self.save_stuff()
 
+    def quit(self):
+        pygame.quit()
+
     def save_stuff(self, filename='trajectory'):
         human_trajectory = self.world.agents["human"].trajectory
         av_trajectory = self.world.agents["av"].trajectory

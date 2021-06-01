@@ -26,13 +26,14 @@ def get_conditions(n_repetitions):
                       [-2., -2.],
                       [4., 0.],
                       [4., 4.]]
+    conditions = [(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
-    conditions = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
-    random.shuffle(conditions)
+    conditions_rep = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
+    random.shuffle(conditions_rep)
 
     # add 5 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
     c_training = [(60, 100., [0., 0.], s_conditions)]
-    conditions = c_training * 5 + conditions
+    conditions = c_training * 2 + conditions + conditions_rep  # 2 TTA=100, all conditions 1x for training, then the repeated conditions
 
     return conditions
 
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 50.  # 20 ms time step
     t_end = 5.  # simulation time
-    n_rep = 20  # number of repetitions per condition
+    n_rep = 15  # number of repetitions per condition
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
@@ -66,6 +67,9 @@ if __name__ == "__main__":
     # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
     world = IntersectionWorld(dt=dt, width=60., height=110.)
     conditions = get_conditions(n_repetitions=n_rep)
+
+    # specify after which trials to have an automatic break; note: trials start at 0!
+    break_after_trial = [1, 29, 239]
 
     for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(conditions):
         print(f"Trial {i}")
@@ -88,3 +92,14 @@ if __name__ == "__main__":
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
                                   str(sim.collision_detected)])  # f"{a_condition:.2f}"
+
+        # clean up
+        sim.quit()
+        del sim  # not sure if necessary
+
+        # small break
+        if i in break_after_trial:
+            input("BREAK! Press Enter to continue")
+
+    print("EXPERIMENT DONE (FREEDOM!)")
+
