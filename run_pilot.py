@@ -38,7 +38,7 @@ def get_conditions(n_repetitions):
 
 
 def initialize_log(participant_id):
-    log_directory = "data"
+    log_directory = "data/pilot0"
     log_file_path = os.path.join(log_directory, "participant_" + str(participant_id) + "_"
                                  + datetime.strftime(datetime.now(), "%Y%m%d_%H%M") + ".csv")
     with open(log_file_path, "w", newline="") as fp:
