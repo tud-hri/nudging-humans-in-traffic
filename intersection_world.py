@@ -1,4 +1,8 @@
+import pygame
+import numpy as np
+
 from lane import VLane, HLane, VShoulder, HShoulder
+from utils import coordinate_transform
 
 
 class IntersectionWorld:
@@ -52,6 +56,10 @@ class IntersectionWorld:
         for lane in self.lanes:
             lane.draw(window, ppm)
 
+        line_color = (240, 240, 240)
+        p0 = coordinate_transform(np.array([38.5 * ppm, 25.5 * ppm]))
+        p1 = coordinate_transform(np.array([41.5 * ppm, 25.5 * ppm]))
+        pygame.draw.line(window, line_color, tuple(p0), tuple(p1), 1)
         # draw lane lines
         # line_color = (240, 240, 240)
         # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.right, self.rect.bottom), 1)
