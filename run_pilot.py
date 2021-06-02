@@ -17,16 +17,16 @@ def get_conditions(n_repetitions):
     # create experiment conditions
     d_conditions = [30., 60.]  # distance (m)
     tau_conditions = [3.5, 5.]  # TTA (s)
-    a_conditions = [-2.0, 0., 4.0]  # acceleration (m/s2)
+    a_conditions = [-3.0, 0., 3.0]  # acceleration (m/s2)
     s_conditions = [0., 0.5]  # decision point / states [in seconds from start]
 
     a_combinations = [[0., 0.],
-                      [0., 4.],
-                      [0., -2.0],
-                      [-2., 0.],
-                      [-2., -2.],
-                      [4., 0.],
-                      [4., 4.]]
+                      [0., 3.],
+                      [0., -3.0],
+                      [-3., 0.],
+                      [-3., -3.],
+                      [3., 0.],
+                      [3., 3.]]
     conditions = [(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
     test_trials = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
