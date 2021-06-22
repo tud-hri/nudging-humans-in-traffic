@@ -45,11 +45,6 @@ def scenario_demo_1(world: IntersectionWorld):
 
 
 def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
-    """
-    scenario for pilot 1
-    :param world:
-    :return:
-    """
 
     def generate_u(dt, t_end, s, a):
         assert (len(s) == len(a))
@@ -65,6 +60,9 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
             elif np.sign(a[i]) == -1:
                 u[0, int(round(s[i] / dt)):-1] = 0.
                 u[1, int(round(s[i] / dt)):-1] = a[i]
+            else:
+                u[0, int(round(s[i] / dt)):-1] = 0.
+                u[1, int(round(s[i] / dt)):-1] = 0.
         return u
 
     y_crossing = 28.5  # y position of the crossing (hardcoded for now, ideally we should get it from the intersection world)

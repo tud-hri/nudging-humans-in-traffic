@@ -5,42 +5,56 @@ Our world: an intersection with left-turn scenario
 import csv
 import os
 import random
-from datetime import datetime
 import time
+from datetime import datetime
 
 import scenarios
 from intersection_world import IntersectionWorld
 from simulator import Simulator
 
 
-def get_conditions(n_repetitions):
+def get_conditions(n_repetitions, fraction_random_trials):
     # create experiment conditions
     d_conditions = [30., 60.]  # distance (m)
-    tau_conditions = [3.5, 5.]  # TTA (s)
-    a_conditions = [-3.0, 0., 3.0]  # acceleration (m/s2)
-    s_conditions = [0., 0.5]  # decision point / states [in seconds from start]
+    tau_conditions = [5.]  # TTA (s)
+    s_conditions = [0., 0.5, 1.0]  # decision point / states [in seconds from start]
+    # a_conditions = [-3.0, 0., 3.0]  # acceleration (m/s2)
+    a_combinations = [[0., 0., 0.],
+                      [0., 3., 0.],
+                      [0., 3., 3.],
+                      [0., -3., 0.],
+                      [0., -3., -3.]]
 
-    a_combinations = [[0., 0.],
-                      [0., 3.],
-                      [0., -3.0],
-                      [-3., 0.],
-                      [-3., -3.],
-                      [3., 0.],
-                      [3., 3.]]
     conditions = [(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
+    # all test trials, each condition has n_repetitions
     test_trials = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
+
+    # add extra random trials and randomize
+    random_trials = []
+    for ii in range(round(fraction_random_trials * len(test_trials))):
+        d = random.uniform(d_conditions[0], d_conditions[1])
+        tau = random.uniform(3.5, 5.0)
+        a = a_combinations[random.randint(0, len(a_combinations)-1)]
+        a = [element * random.uniform(0., 2.) for element in a]  # bit of a workaround, if a were a np.array, would've been easier :-)
+        random_trials.append((d, tau, a, s_conditions))
+
+    test_trials += random_trials
+
     random.shuffle(test_trials)
 
-    # add 5 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
-    training_trials = [(60, 100., [0., 0.], s_conditions)] * 2 + conditions
-    all_trials = training_trials + test_trials  # 2 TTA=100, all conditions 1x for training, then the repeated conditions
+    # add training trials
+    # add 2 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
+    training_trials = [(60, 100., [0., 0., 0.], s_conditions)] * 2 + conditions
+
+    # combine
+    all_trials = training_trials + test_trials
 
     return all_trials, training_trials, test_trials
 
 
 def initialize_log(participant_id):
-    log_directory = "data/pilot0"
+    log_directory = "data/pilot1"
     log_file_path = os.path.join(log_directory, "participant_" + str(participant_id) + "_"
                                  + datetime.strftime(datetime.now(), "%Y%m%d_%H%M") + ".csv")
     with open(log_file_path, "w", newline="") as fp:
@@ -59,7 +73,8 @@ if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 50.  # 20 ms time step
     t_end = 5.  # simulation time
-    n_rep = 15  # number of repetitions per condition
+    n_rep = 30  # number of repetitions per condition
+    fraction_random_trials = 0.2  # fraction of random trials added
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
@@ -67,10 +82,10 @@ if __name__ == "__main__":
     # create our world
     # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
     world = IntersectionWorld(dt=dt, width=60., height=110., show_state_text=False)
-    all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep)
+    all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep, fraction_random_trials=fraction_random_trials)
 
     # specify after which trials to have an automatic break; note: trials start at 0!
-    break_after_trial = [29, 239]
+    break_after_trial = [11, 190]
 
     for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(all_trials):
         if i < len(training_trials):
