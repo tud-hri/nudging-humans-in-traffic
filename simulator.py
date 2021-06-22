@@ -78,6 +78,16 @@ class Simulator:
                 self.window.blit(txt_surface, p)
                 pos = (pos[0], p.top)
 
+            # text for keys
+            font = pygame.font.SysFont("verdana", 12)
+            pos = [150, 850]
+            text = ["Turn left: press 'LEFT' key or 'Z'", "Stay: press '/' or 'S' keys"]
+            for txt in text:
+                txt_surface = font.render(txt, True, (255, 255, 255))
+                # p = txt_surface.get_rect(left=p[0], bottom=p[1])
+                self.window.blit(txt_surface, pos)
+                pos[1] = pos[1] + txt_surface.get_rect().bottom + 0.25 * txt_surface.get_height()
+
             pygame.display.flip()
 
             counter += 1

@@ -362,9 +362,9 @@ class CarHumanTriggeredPD(Car):
 
         # if go key
         if self.decision is None:
-            if keys[K_LEFT]:
+            if keys[K_LEFT] or keys[K_z]:
                 self.decision = "go"
-            elif keys[K_s]:
+            elif keys[K_s] or keys[K_SLASH]:
                 self.decision = "stay"
 
             if not (self.decision is None):

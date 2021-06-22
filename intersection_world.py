@@ -1,5 +1,5 @@
-import pygame
 import numpy as np
+import pygame
 
 from lane import VLane, HLane, VShoulder, HShoulder
 from utils import coordinate_transform
