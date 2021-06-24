@@ -1,0 +1,26 @@
+participant_id	d_condition	tau_condition	a_condition	is_test_trial	decision	RT	collision
+2	60	100.0	[0.0, 0.0, 0.0]	False	go	2.320	False
+2	60	100.0	[0.0, 0.0, 0.0]	False	go	2.460	False
+2	30	5.0	[0.0, 0.0, 0.0]	False	stay	1.680	False
+2	30	5.0	[0.0, 3.0, 0.0]	False	stay	1.180	False
+2	30	5.0	[0.0, 3.0, 3.0]	False	go	0.900	True
+2	30	5.0	[0.0, -3.0, 0.0]	False	go	0.940	False
+2	30	5.0	[0.0, -3.0, -3.0]	False	go	0.760	False
+2	60	5.0	[0.0, 0.0, 0.0]	False	go	0.880	False
+2	60	5.0	[0.0, 3.0, 0.0]	False	go	0.380	False
+2	60	5.0	[0.0, 3.0, 3.0]	False	go	0.780	False
+2	60	5.0	[0.0, -3.0, 0.0]	False	go	1.060	False
+2	60	5.0	[0.0, -3.0, -3.0]	False	go	0.680	False
+2	30	5.0	[0.0, -3.0, -3.0]	True	stay	2.240	False
+2	60	5.0	[0.0, 0.0, 0.0]	True	go	0.740	False
+2	60	5.0	[0.0, -3.0, -3.0]	True	go	1.040	False
+2	30	5.0	[0.0, 0.0, 0.0]	True	go	0.980	False
+2	60	5.0	[0.0, 0.0, 0.0]	True	go	0.560	False
+2	31	3.7	[0.0, 5.490940171667208, 0.0]	False	stay	1.160	False
+2	30	5.0	[0.0, 3.0, 0.0]	True	go	0.820	False
+2	30	5.0	[0.0, -3.0, -3.0]	True	go	0.740	False
+2	40	4.7	[0.0, -0.2801372367686983, -4.8049130815482]	False	go	0.740	False
+2	60	5.0	[0.0, 3.0, 3.0]	True	go	0.760	False
+2	60	5.0	[0.0, 3.0, 0.0]	True	go	0.840	False
+2	30	5.0	[0.0, 0.0, 0.0]	True	go	1.080	False
+2	60	5.0	[0.0, -3.0, 0.0]	True	go	0.920	False

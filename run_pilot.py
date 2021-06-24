@@ -15,29 +15,31 @@ from simulator import Simulator
 
 def get_conditions(n_repetitions, fraction_random_trials):
     # create experiment conditions
-    d_conditions = [30., 60.]  # distance (m)
-    tau_conditions = [5.]  # TTA (s)
+    d_conditions = [30., 45.]  # distance (m)
+    tau_conditions = [4.5]  # TTA (s)
     s_conditions = [0., 0.5, 1.0]  # decision point / states [in seconds from start]
     # a_conditions = [-3.0, 0., 3.0]  # acceleration (m/s2)
     a_combinations = [[0., 0., 0.],
                       [0., 3., 0.],
                       [0., 3., 3.],
+                      [0., 3., -3.],
                       [0., -3., 0.],
+                      [0., -3., 3.],
                       [0., -3., -3.]]
 
-    conditions = [(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations]
-
+    conditions = [(d, tau, a, s_conditions, True) # is_test_trial: True
+                  for d in d_conditions for tau in tau_conditions for a in a_combinations]
     # all test trials, each condition has n_repetitions
-    test_trials = ([(d, tau, a, s_conditions) for d in d_conditions for tau in tau_conditions for a in a_combinations] * n_repetitions)
+    test_trials = conditions * n_repetitions
 
     # add extra random trials and randomize
     random_trials = []
     for ii in range(round(fraction_random_trials * len(test_trials))):
         d = random.uniform(d_conditions[0], d_conditions[1])
-        tau = random.uniform(3.5, 5.0)
+        tau = random.uniform(2.5, 5.0)
         a = a_combinations[random.randint(0, len(a_combinations)-1)]
         a = [element * random.uniform(0., 2.) for element in a]  # bit of a workaround, if a were a np.array, would've been easier :-)
-        random_trials.append((d, tau, a, s_conditions))
+        random_trials.append((d, tau, a, s_conditions, False)) # is_test_trial: False
 
     test_trials += random_trials
 
@@ -45,7 +47,9 @@ def get_conditions(n_repetitions, fraction_random_trials):
 
     # add training trials
     # add 2 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
-    training_trials = [(60, 100., [0., 0., 0.], s_conditions)] * 2 + conditions
+    training_trials = [(60, 100., [0., 0., 0.], s_conditions, False)] * 2 + \
+                      [(d, tau, a, s_conditions, False) # is_test_trial: False
+                       for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
     # combine
     all_trials = training_trials + test_trials
@@ -59,7 +63,7 @@ def initialize_log(participant_id):
                                  + datetime.strftime(datetime.now(), "%Y%m%d_%H%M") + ".csv")
     with open(log_file_path, "w", newline="") as fp:
         writer = csv.writer(fp, delimiter="\t")
-        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "decision", "RT", "collision"])
+        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "is_test_trial", "decision", "RT", "collision"])
     return log_file_path
 
 
@@ -67,7 +71,6 @@ def write_log(log_file_path, trial_log):
     with open(log_file_path, "a", newline="") as fp:
         writer = csv.writer(fp, delimiter="\t")
         writer.writerow(trial_log)
-
 
 if __name__ == "__main__":
     # Run an example experiment
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     # specify after which trials to have an automatic break; note: trials start at 0!
     break_after_trial = [11, 190]
 
-    for i, (d_condition, tau_condition, a_condition, s_condition) in enumerate(all_trials):
+    for i, (d_condition, tau_condition, a_condition, s_condition, is_test_trial) in enumerate(all_trials):
         if i < len(training_trials):
             print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
         else:
@@ -109,7 +112,7 @@ if __name__ == "__main__":
             break
 
         # and save stuff (just a proposal for filename coding)
-        write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition),
+        write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition), str(is_test_trial),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
                                   str(sim.collision_detected)])  # f"{a_condition:.2f}"
 
