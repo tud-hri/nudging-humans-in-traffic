@@ -6,11 +6,19 @@ import csv
 import os
 import random
 import time
+import numpy as np
 from datetime import datetime
+from enum import Enum
 
 import scenarios
 from intersection_world import IntersectionWorld
 from simulator import Simulator
+
+
+class TrialType(Enum):
+    TEST = 0
+    TRAINING = 1
+    RANDOM = 2
 
 
 def get_conditions(n_repetitions, fraction_random_trials):
@@ -18,7 +26,6 @@ def get_conditions(n_repetitions, fraction_random_trials):
     d_conditions = [30., 45.]  # distance (m)
     tau_conditions = [4.5]  # TTA (s)
     s_conditions = [0., 0.5, 1.0]  # decision point / states [in seconds from start]
-    # a_conditions = [-3.0, 0., 3.0]  # acceleration (m/s2)
     a_combinations = [[0., 0., 0.],
                       [0., 3., 0.],
                       [0., 3., 3.],
@@ -27,19 +34,19 @@ def get_conditions(n_repetitions, fraction_random_trials):
                       [0., -3., 3.],
                       [0., -3., -3.]]
 
-    conditions = [(d, tau, a, s_conditions, True) # is_test_trial: True
-                  for d in d_conditions for tau in tau_conditions for a in a_combinations]
+    conditions = [(d, tau, a, s_conditions, TrialType.TEST) for d in d_conditions for tau in tau_conditions for a in a_combinations]
+
     # all test trials, each condition has n_repetitions
     test_trials = conditions * n_repetitions
 
     # add extra random trials and randomize
     random_trials = []
     for ii in range(round(fraction_random_trials * len(test_trials))):
-        d = random.uniform(d_conditions[0], d_conditions[1])
-        tau = random.uniform(2.5, 5.0)
-        a = a_combinations[random.randint(0, len(a_combinations)-1)]
-        a = [element * random.uniform(0., 2.) for element in a]  # bit of a workaround, if a were a np.array, would've been easier :-)
-        random_trials.append((d, tau, a, s_conditions, False)) # is_test_trial: False
+        d = round(random.uniform(d_conditions[0], d_conditions[1]), 2)
+        tau = round(random.uniform(2.5, 5.0), 2)
+        a = a_combinations[random.randint(0, len(a_combinations) - 1)]
+        a = [round(element * random.uniform(0., 2.), 2) for element in a]  # bit of a workaround, if a were a np.array, would've been easier :-)
+        random_trials.append((d, tau, a, s_conditions, TrialType.RANDOM))
 
     test_trials += random_trials
 
@@ -47,9 +54,8 @@ def get_conditions(n_repetitions, fraction_random_trials):
 
     # add training trials
     # add 2 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
-    training_trials = [(60, 100., [0., 0., 0.], s_conditions, False)] * 2 + \
-                      [(d, tau, a, s_conditions, False) # is_test_trial: False
-                       for d in d_conditions for tau in tau_conditions for a in a_combinations]
+    training_trials = [(60, 100., [0., 0., 0.], s_conditions, TrialType.TRAINING)] * 2 + \
+                      [(d, tau, a, s_conditions, TrialType.TRAINING) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
     # combine
     all_trials = training_trials + test_trials
@@ -72,6 +78,7 @@ def write_log(log_file_path, trial_log):
         writer = csv.writer(fp, delimiter="\t")
         writer.writerow(trial_log)
 
+
 if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 50.  # 20 ms time step
@@ -88,10 +95,11 @@ if __name__ == "__main__":
     all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep, fraction_random_trials=fraction_random_trials)
 
     # specify after which trials to have an automatic break; note: trials start at 0!
-    break_after_trial = [11, 190]
+    # three breaks
+    break_after_trial = [len(training_trials) - 1, len(training_trials) + round(len(test_trials) / 3), len(training_trials) + round(2 * len(test_trials) / 3)]
 
-    for i, (d_condition, tau_condition, a_condition, s_condition, is_test_trial) in enumerate(all_trials):
-        if i < len(training_trials):
+    for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
+        if trial_type is TrialType.TRAINING:
             print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
         else:
             print(f"TEST: Trial {i - len(training_trials) + 1} of {len(test_trials)}")
@@ -112,7 +120,7 @@ if __name__ == "__main__":
             break
 
         # and save stuff (just a proposal for filename coding)
-        write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition), str(is_test_trial),
+        write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition), str(trial_type is TrialType.TEST),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
                                   str(sim.collision_detected)])  # f"{a_condition:.2f}"
 
