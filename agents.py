@@ -353,8 +353,8 @@ class CarHumanTriggeredPD(Car):
 
         # gains (proportional only for now)
         self.K_v = 2.
-        self.K_y = 0.2
-        self.K_psi = .95
+        self.K_y = 0.23
+        self.K_psi = 1.
 
     def calculate_action(self, sim_time: float, step: int):
         keys = pygame.key.get_pressed()

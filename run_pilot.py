@@ -68,7 +68,7 @@ def initialize_log(participant_id):
                                  + datetime.strftime(datetime.now(), "%Y%m%d_%H%M") + ".csv")
     with open(log_file_path, "w", newline="") as fp:
         writer = csv.writer(fp, delimiter="\t")
-        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "is_test_trial", "decision", "RT", "collision"])
+        writer.writerow(["participant_id", "d_condition", "tau_condition", "a_condition", "is_test_trial", "decision", "RT", "collision", "pet"])
     return log_file_path
 
 
@@ -80,7 +80,7 @@ def write_log(log_file_path, trial_log):
 
 if __name__ == "__main__":
     # Run an example experiment
-    dt = 1. / 50.  # 20 ms time step
+    dt = 1. / 60.  # 20 ms time step
     t_end = 5.  # simulation time
     n_rep = 30  # number of repetitions per condition
     fraction_random_trials = 0.2  # fraction of random trials added
@@ -114,10 +114,13 @@ if __name__ == "__main__":
             print("Experiment killed")
             break
 
+        # calculate post encroachment time
+        pet = round(sim.world.t_pet_out_av - sim.world.t_pet_out_human, 4)
+
         # and save stuff (just a proposal for filename coding)
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition), str(trial_type is TrialType.TEST),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
-                                  str(sim.collision_detected)])  # f"{a_condition:.2f}"
+                                  str(sim.collision_detected), str(pet)])  # f"{a_condition:.2f}"
 
         # clean up
         sim.quit()
