@@ -6,7 +6,6 @@ import csv
 import os
 import random
 import time
-import numpy as np
 from datetime import datetime
 from enum import Enum
 
@@ -103,10 +102,6 @@ if __name__ == "__main__":
             print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
         else:
             print(f"TEST: Trial {i - len(training_trials) + 1} of {len(test_trials)}")
-
-        # print(f"Distance {d_condition:.0f} m", f"Time gap {tau_condition:.1f} s",
-        #       f"Speed {3.6 * d_condition / tau_condition:.2f} km/h", "Acceleration", str(a_condition), "m/s^2",
-        #       "Acceleration changes at ", str(s_condition), "s")  # {a_condition[0]:.2f} m/s^2
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)

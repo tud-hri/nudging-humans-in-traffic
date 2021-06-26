@@ -7,19 +7,15 @@ from utils import coordinate_transform
 
 class IntersectionWorld:
     def __init__(self, dt: float, width: float, height: float, show_state_text=True):
-        """
-        The world our agents live in
-        :param dt: simulation time step [second]
-        :param width: world width [meter]
-        :param height: world height [meter]
-        """
         self.dt = dt
         self.width = width  # [m]
         self.height = height  # [m]
 
         self.agents = {}
         self.lanes = []
+        self.lane_width = 3.5
         self.shoulders = []  # all the road shoulders, added to keep the cars on the road.
+        self.p_intersection = np.array([40., 30.])
 
         self.collision = []
         self.create_intersection()
@@ -28,15 +24,20 @@ class IntersectionWorld:
     def create_intersection(self):
 
         # lanes
-        self.lanes.append(HLane([0., 30.], [40., 30.], 3.))
-        self.lanes.append(HLane([0., 27.], [40., 27.], 3.))
-        self.lanes.append(VLane([40., 0.], [40., 120.], 3.))
-        self.lanes.append(VLane([37., 0.], [37., 120.], 3.))
+        self.lanes.append(VLane([self.p_intersection[0] - self.lane_width / 2., 0.],
+                                [self.p_intersection[0] - self.lane_width / 2., 120.], self.lane_width))
+        self.lanes.append(VLane([self.p_intersection[0] + self.lane_width / 2., 0.],
+                                [self.p_intersection[0] + self.lane_width / 2., 120.], self.lane_width))
+
+        self.lanes.append(HLane([0., self.p_intersection[1] - self.lane_width / 2.],
+                                [self.p_intersection[0], self.p_intersection[1] - self.lane_width / 2.], self.lane_width))
+        self.lanes.append(HLane([0., self.p_intersection[1] + self.lane_width / 2.],
+                                [self.p_intersection[0], self.p_intersection[1] + self.lane_width / 2.], self.lane_width))
 
         # shoulders / bounds
-        self.shoulders.append(HShoulder([0., 32], side='top'))  # shoulder left turn, top
-        self.shoulders.append(VShoulder([35, 0.], side='left'))  # shoulder left of vertical road
-        self.shoulders.append(VShoulder([42, 0.], side='right'))  # shoulder right of vertical road
+        self.shoulders.append(HShoulder([0., self.p_intersection[1]], side='top'))  # shoulder left turn, top
+        self.shoulders.append(VShoulder([self.p_intersection[1] + self.lane_width, 0.], side='left'))  # shoulder left of vertical road
+        self.shoulders.append(VShoulder([self.p_intersection[0] + self.lane_width, 0.], side='right'))  # shoulder right of vertical road
 
     def tick(self, sim_time: float, step: int):
         # find action
@@ -56,14 +57,25 @@ class IntersectionWorld:
         for lane in self.lanes:
             lane.draw(window, ppm)
 
+        # stop lines
         line_color = (240, 240, 240)
-        p0 = coordinate_transform(np.array([38.5 * ppm, 25.5 * ppm]))
-        p1 = coordinate_transform(np.array([41.5 * ppm, 25.5 * ppm]))
+        p0 = coordinate_transform(np.array([self.p_intersection[0] - self.lane_width, self.p_intersection[1]]), ppm)
+        p1 = coordinate_transform(np.array([self.p_intersection[0] - self.lane_width, self.p_intersection[1] - self.lane_width]), ppm)
         pygame.draw.line(window, line_color, tuple(p0), tuple(p1), 1)
-        # draw lane lines
-        # line_color = (240, 240, 240)
-        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.right, self.rect.bottom), 1)
-        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.top), (self.rect.right, self.rect.top), 1)
+
+        # dashed lines vertical road
+        p_start = coordinate_transform(np.array([self.p_intersection[0], self.height]), ppm)
+        p_end = coordinate_transform(np.array([self.p_intersection[0], 0.]), ppm)
+        points = np.arange(p_start[1], p_end[1], 1.5 * ppm)
+        for ii in range(0, len(points) - 1, 2):
+            pygame.draw.line(window, line_color, (p_start[0], points[ii]), (p_end[0], points[ii + 1]), 1)
+
+        # # dashed lines horizontal road
+        p_start = coordinate_transform(np.array([0., self.p_intersection[1]]), ppm)
+        p_end = coordinate_transform(np.array([self.p_intersection[0]- self.lane_width, self.p_intersection[1]]), ppm)
+        points = np.arange(p_start[0], p_end[0], 1.5 * ppm)
+        for ii in range(0, len(points) - 1, 2):
+            pygame.draw.line(window, line_color, (points[ii], p_start[1]), (points[ii + 1], p_start[1]), 1)
 
         # draw agents
         state_text = []

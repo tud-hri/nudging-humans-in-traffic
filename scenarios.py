@@ -45,7 +45,6 @@ def scenario_demo_1(world: IntersectionWorld):
 
 
 def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
-
     def generate_u(dt, t_end, s, a):
         assert (len(s) == len(a))
 
@@ -65,14 +64,14 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
                 u[1, int(round(s[i] / dt)):-1] = 0.
         return u
 
-    y_crossing = 28.5  # y position of the crossing (hardcoded for now, ideally we should get it from the intersection world)
-
     # Add AV
     # create an AV agent, set its initial position and velocity, then set its constant input (acceleration)
-    car_av = agents.CarPredefinedControl(p0=[37., y_crossing + d0_av], phi0=-np.pi / 2., v0=v0_av, world=world, color='red')
+    car_av = agents.CarPredefinedControl(p0=[world.lanes[0].x_center_m, world.p_intersection[1] + d0_av],  v0=v0_av,
+                                         phi0=-np.pi / 2., world=world, color='red')
     car_av.u_predefined = generate_u(world.dt, 10., s_av, a_av)  # generate the predefined control
     world.agents.update({'av': car_av})
 
     # add human
-    car_human = agents.CarHumanTriggeredPD(p0=[40., 23.], v0=0., phi0=np.pi / 2., world=world, color='blue')
+    car_human = agents.CarHumanTriggeredPD(p0=[world.lanes[1].x_center_m, world.p_intersection[1] - world.lane_width - 2.5], v0=0.,
+                                           phi0=np.pi / 2., world=world, color='blue')
     world.agents.update({'human': car_human})

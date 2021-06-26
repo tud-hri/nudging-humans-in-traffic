@@ -45,8 +45,7 @@ class Car:
 
     def draw(self, window, ppm):
         # coordinate transform to graphics coordinate frame
-        p = self.x[0:2] * ppm
-        p = coordinate_transform(p)
+        p = coordinate_transform(self.x[0:2], ppm)
 
         img = pygame.transform.scale(self.image, (int(self.car_length * ppm), int(self.car_width * ppm)))
         img = pygame.transform.rotate(img, np.rad2deg(self.x[2]))
@@ -306,9 +305,9 @@ class CarMPC(Car):
         super().draw(window, ppm)
 
         # show planned path (convert from m to pixels, and then coordinate transform)
-        p = self.x_mpc[0:2, :] * ppm
+        p = self.x_mpc[0:2, :]
         if p.shape[1] > 1:
-            pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x)) for x in p.T.tolist()])
+            pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x, ppm)) for x in p.T.tolist()])
 
 
 class CarSimulatedHuman(CarMPC):
@@ -348,9 +347,9 @@ class CarHumanTriggeredPD(Car):
         # self.decision_stay = False
 
         # desired state
-        self.v_des = 30. / 3.6
+        self.v_des = 50. / 3.6
         self.phi_des = np.pi
-        self.y_des = 30.
+        self.y_des = world.lanes[3].p0[1]
 
         # gains (proportional only for now)
         self.K_v = 2.

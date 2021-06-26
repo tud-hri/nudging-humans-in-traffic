@@ -1,8 +1,9 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 from pygame.locals import *
-import time
 
 import scenarios
 from intersection_world import IntersectionWorld
@@ -31,7 +32,6 @@ class Simulator:
     def run(self):
         running = True
         paused = False
-        kill_switch_pressed = False
         t0 = pygame.time.get_ticks()
         counter = 0
 
@@ -82,18 +82,16 @@ class Simulator:
             # text for keys
             font = pygame.font.SysFont("verdana", 12)
             pos = [150, 850]
-            text = ["Turn left: press 'LEFT' key or 'Z'", "Stay: press '/' or 'S' keys"]
+            text = ["Turn: 'LEFT' or 'Z'", "Stay: '/' or 'S'"]
             for txt in text:
                 txt_surface = font.render(txt, True, (255, 255, 255))
-                # p = txt_surface.get_rect(left=p[0], bottom=p[1])
                 self.window.blit(txt_surface, pos)
-                pos[1] = pos[1] + txt_surface.get_rect().bottom + 0.25 * txt_surface.get_height()
-
+                pos[1] = pos[1] + txt_surface.get_rect().bottom + 0.3 * txt_surface.get_height()
 
             if self.collision_detected:
-                font = pygame.font.SysFont("verdana", 24)
-                txt_surface = font.render("Collision detected! Please, don't crash", True, (255, 255, 255))
-                self.window.blit(txt_surface, txt_surface.get_rect(centerx=self.window.get_width()/2, centery=self.window.get_height()/2))
+                font = pygame.font.SysFont("verdana", 20)
+                txt_surface = font.render("Collision detected!", True, (255, 255, 255))
+                self.window.blit(txt_surface, txt_surface.get_rect(centerx=self.window.get_width() / 2, centery=self.window.get_height() / 2))
                 pygame.display.flip()
                 time.sleep(5.)
                 return
@@ -104,10 +102,6 @@ class Simulator:
 
             if self.dt * counter >= self.T:
                 running = False
-                # print("Time's up, we're done here. Simulation finished in {0} seconds".format(t_elapsed))
-
-        # self.plot_stuff()
-        # self.save_stuff()
 
     def quit(self):
         pygame.quit()
