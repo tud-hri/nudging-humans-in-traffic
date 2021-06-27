@@ -9,6 +9,8 @@ import time
 from datetime import datetime
 from enum import Enum
 
+import numpy as np
+
 import scenarios
 from intersection_world import IntersectionWorld
 from simulator import Simulator
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     dt = 1. / 60.  # 20 ms time step
     t_end = 5.  # simulation time
     n_rep = 30  # number of repetitions per condition
-    fraction_random_trials = 0.2  # fraction of random trials added
+    fraction_random_trials = 0.15  # fraction of random trials added
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
@@ -95,7 +97,8 @@ if __name__ == "__main__":
 
     # specify after which trials to have an automatic break; note: trials start at 0!
     # three breaks
-    break_after_trial = [len(training_trials) - 1, len(training_trials) + round(len(test_trials) / 3), len(training_trials) + round(2 * len(test_trials) / 3)]
+    # break_after_trial = [len(training_trials) - 1, len(training_trials) + round(len(test_trials) / 3), len(training_trials) + round(2 * len(test_trials) / 3)]
+    break_after_trial = [len(training_trials) - 1] + [int(ii) for ii in np.round(len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
 
     for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
         if trial_type is TrialType.TRAINING:
