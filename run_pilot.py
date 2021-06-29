@@ -85,7 +85,7 @@ if __name__ == "__main__":
     dt = 1. / 60.  # 20 ms time step
     t_end = 5.  # simulation time
     n_rep = 30  # number of repetitions per condition
-    fraction_random_trials = 0.15  # fraction of random trials added
+    fraction_random_trials = 0.05  # fraction of random trials added
 
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
