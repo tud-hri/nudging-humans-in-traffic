@@ -26,14 +26,14 @@ def get_conditions(n_repetitions, fraction_random_trials):
     # create experiment conditions
     d_conditions = [30., 45.]  # distance (m)
     tau_conditions = [4.5]  # TTA (s)
-    s_conditions = [0., 0.5, 1.0]  # decision point / states [in seconds from start]
-    a_combinations = [[0., 0., 0.],
-                      [0., 3., 0.],
-                      [0., 3., 3.],
-                      [0., 3., -3.],
-                      [0., -3., 0.],
-                      [0., -3., 3.],
-                      [0., -3., -3.]]
+    s_conditions = [0., 0.5, 1.0, 1.5]  # decision point / states [in seconds from start]
+    a_combinations = [[0., 0., 0., 0.],
+                      [0., 3., 0., 0.],
+                      [0., 3., 3., 0.],
+                      [0., 3., -3., 0.],
+                      [0., -3., 0., 0.],
+                      [0., -3., 3., 0.],
+                      [0., -3., -3., 0.]]
 
     conditions = [(d, tau, a, s_conditions, TrialType.TEST) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
@@ -98,7 +98,8 @@ if __name__ == "__main__":
     # specify after which trials to have an automatic break; note: trials start at 0!
     # three breaks
     # break_after_trial = [len(training_trials) - 1, len(training_trials) + round(len(test_trials) / 3), len(training_trials) + round(2 * len(test_trials) / 3)]
-    break_after_trial = [len(training_trials) - 1] + [int(ii) for ii in np.round(len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
+    break_after_trial = [len(training_trials) - 1] + [int(ii) for ii in np.round(
+        len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
 
     for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
         if trial_type is TrialType.TRAINING:

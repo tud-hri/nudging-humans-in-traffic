@@ -66,7 +66,7 @@ def scenario_pilot1(world: IntersectionWorld, d0_av, v0_av, a_av, s_av):
 
     # Add AV
     # create an AV agent, set its initial position and velocity, then set its constant input (acceleration)
-    car_av = agents.CarPredefinedControl(p0=[world.lanes[0].x_center_m, world.p_intersection[1] + d0_av],  v0=v0_av,
+    car_av = agents.CarPredefinedControl(p0=[world.lanes[0].x_center_m, world.p_intersection[1] + d0_av], v0=v0_av,
                                          phi0=-np.pi / 2., world=world, color='red')
     car_av.u_predefined = generate_u(world.dt, 10., s_av, a_av)  # generate the predefined control
     world.agents.update({'av': car_av})
