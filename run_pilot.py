@@ -118,12 +118,12 @@ if __name__ == "__main__":
             break
 
         # calculate post encroachment time
-        pet = round(sim.world.t_pet_out_av - sim.world.t_pet_out_human, 4)
+        pet = np.round(sim.world.t_pet_out_av - sim.world.t_pet_out_human, 4)
 
         # and save stuff (just a proposal for filename coding)
         write_log(log_file_path, [participant_id, int(d_condition), f"{tau_condition:.1f}", str(a_condition), str(trial_type is TrialType.TEST),
                                   str(sim.world.agents["human"].decision), f"{sim.world.agents['human'].response_time:.3f}",
-                                  str(sim.collision_detected), str(pet)])  # f"{a_condition:.2f}"
+                                  str(sim.collision_detected), str(pet)])
 
         # clean up
         sim.quit()

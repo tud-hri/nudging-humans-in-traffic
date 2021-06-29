@@ -26,8 +26,8 @@ class IntersectionWorld:
 
         self.human_in_pet_zone_prev = False
         self.av_in_pet_zone_prev = False
-        self.t_pet_out_human = -10.
-        self.t_pet_out_av = -5.
+        self.t_pet_out_human = np.NAN
+        self.t_pet_out_av = np.NAN
 
     def create_intersection(self):
 
