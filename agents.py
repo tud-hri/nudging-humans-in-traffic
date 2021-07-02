@@ -342,7 +342,7 @@ class CarHumanTriggeredPD(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
         super(CarHumanTriggeredPD, self).__init__(p0, phi0, v0, world, color)
         self.decision = None
-        self.response_time = -1
+        self.response_time = -1.
         # self.decision_go = False
         # self.decision_stay = False
 
@@ -368,8 +368,8 @@ class CarHumanTriggeredPD(Car):
 
             if not (self.decision is None):
                 self.response_time = sim_time
-                print(f"Decision: {self.decision}")
-                print(f"Response time: {self.response_time:.3f}")
+                # print(f"Decision: {self.decision}")
+                # print(f"Response time: {self.response_time:.3f}")
 
         # if decision is made, use a simple PD to control the car
         if self.decision == "go":

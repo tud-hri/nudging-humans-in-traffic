@@ -68,6 +68,7 @@ class IntersectionWorld:
             if not collision_detected and self.human_in_pet_zone_prev:
                 # means the human is out of the pet zone
                 self.t_pet_out_human = sim_time
+                # print("t_pet_out_human: " + str(self.t_pet_out_human))
             self.human_in_pet_zone_prev = collision_detected
 
         av = self.agents["av"]
@@ -75,6 +76,7 @@ class IntersectionWorld:
         if collision_detected and not self.av_in_pet_zone_prev:
             # means the av enters the pet zone
             self.t_pet_out_av = sim_time
+            # print("t_pet_out_av: " + str(self.t_pet_out_av))
         self.av_in_pet_zone_prev = collision_detected
 
     def draw(self, window, ppm):
@@ -113,7 +115,7 @@ class IntersectionWorld:
                 pos = (pos[0], state_text.get_rect().bottom + 0.25 * state_text.get_height())
 
         # update pet square to pygame coordinates
-        p = coordinate_transform(self.p_pet_square + np.array([-self.lane_width,  self.lane_width]) / 2., ppm)
-        self.pet_rect = pygame.Rect(p[0], p[1], self.lane_width * ppm, self.lane_width * ppm)
+        p = coordinate_transform(self.p_pet_square + np.array([-self.lane_width, self.lane_width]) / 2., ppm)
+        self.pet_rect = pygame.Rect(p[0], p[1], 0.8 * self.lane_width * ppm, 0.8 * self.lane_width * ppm)
 
         # pygame.draw.rect(window, (255,0,0), self.pet_rect)

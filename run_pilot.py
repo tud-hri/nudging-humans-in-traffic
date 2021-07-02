@@ -90,9 +90,6 @@ if __name__ == "__main__":
     participant_id = input("Enter participant ID: ")
     log_file_path = initialize_log(participant_id=participant_id)
 
-    # create our world
-    # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
-    world = IntersectionWorld(dt=dt, width=60., height=110., show_state_text=False)
     all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep, fraction_random_trials=fraction_random_trials)
 
     # specify after which trials to have an automatic break; note: trials start at 0!
@@ -102,6 +99,10 @@ if __name__ == "__main__":
         len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
 
     for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
+
+        # create our world
+        # coordinate system: x (right, meters), y (up, meters), psi (CCW, east = 0., rad)
+        world = IntersectionWorld(dt=dt, width=60., height=110., show_state_text=False)
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)
