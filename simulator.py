@@ -19,6 +19,8 @@ class Simulator:
         self.ppm = ppm  # pixel per meter
         self.realtime = realtime  # should the sim go 'soft' real time or AFAP?
 
+        self.user_text = ""
+
         self.collision_detected = False
 
         # setup pygame, create a window if we're going to visualize things
@@ -95,6 +97,12 @@ class Simulator:
                 pygame.display.flip()
                 time.sleep(5.)
                 return
+
+            # user defined text
+            if not self.user_text == "":
+                font = pygame.font.SysFont("verdana", 20)
+                txt_surface = font.render(self.user_text, True, (255, 255, 255))
+                self.window.blit(txt_surface, txt_surface.get_rect(centerx=self.window.get_width() / 2, centery=self.window.get_height() / 6))
 
             pygame.display.flip()
 

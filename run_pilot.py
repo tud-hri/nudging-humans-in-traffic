@@ -55,7 +55,7 @@ def get_conditions(n_repetitions, fraction_random_trials):
 
     # add training trials
     # add 2 trials with a car that is (almost) standing still for getting used to the egocar's left-turn movement
-    training_trials = [(60, 100., [0., 0., 0.], s_conditions, TrialType.TRAINING)] * 2 + \
+    training_trials = [(60, 100., [0., 0., 0., 0.], s_conditions, TrialType.TRAINING)] * 2 + \
                       [(d, tau, a, s_conditions, TrialType.TRAINING) for d in d_conditions for tau in tau_conditions for a in a_combinations]
 
     # combine
@@ -102,14 +102,17 @@ if __name__ == "__main__":
         len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
 
     for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
-        if trial_type is TrialType.TRAINING:
-            print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
-        else:
-            print(f"TEST: Trial {i - len(training_trials) + 1} of {len(test_trials)}")
 
         # run a scenario in this world
         scenarios.scenario_pilot1(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition, s_av=s_condition)
         sim = Simulator(world, end_time=t_end, ppm=10)
+
+        if trial_type is TrialType.TRAINING:
+            print(f"TRAINING: Trial {i + 1} of {len(training_trials)}")
+            sim.user_text = "Training"
+        else:
+            sim.user_text = "Experiment"
+            print(f"TEST: Trial {i - len(training_trials) + 1} of {len(test_trials)}")
 
         # run stuff
         kill_switch = sim.run()
