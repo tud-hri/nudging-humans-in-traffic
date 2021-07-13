@@ -84,15 +84,15 @@ class Simulator:
             # text for keys
             font = pygame.font.SysFont("verdana", 12)
             pos = [150, 850]
-            text = ["Turn: 'LEFT' or 'Z'", "Stay: '/' or 'S'"]
+            text = ["Turn: 'Z'", "Stay: '/'"]
             for txt in text:
                 txt_surface = font.render(txt, True, (255, 255, 255))
                 self.window.blit(txt_surface, pos)
                 pos[1] = pos[1] + txt_surface.get_rect().bottom + 0.3 * txt_surface.get_height()
 
             if self.collision_detected:
-                font = pygame.font.SysFont("verdana", 20)
-                txt_surface = font.render("Collision! Wait 5 seconds", True, (255, 255, 255))
+                font = pygame.font.SysFont("verdana", 22)
+                txt_surface = font.render("Warning: Please try to avoid collisions!", True, (230, 0, 0))
                 self.window.blit(txt_surface, txt_surface.get_rect(centerx=self.window.get_width() / 2, centery=self.window.get_height() / 2))
                 pygame.display.flip()
                 time.sleep(5.)

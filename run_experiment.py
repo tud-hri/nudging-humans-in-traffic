@@ -82,7 +82,6 @@ def write_log(log_file_path, trial_log):
         writer = csv.writer(fp, delimiter="\t")
         writer.writerow(trial_log)
 
-
 if __name__ == "__main__":
     # Run an example experiment
     dt = 1. / 60.  # 20 ms time step
@@ -90,7 +89,9 @@ if __name__ == "__main__":
     n_rep = 30  # number of repetitions per condition
     fraction_random_trials = 0.05  # fraction of random trials added
 
-    participant_id = input("Enter participant ID: ")
+    participant_id = random.randint(1001, 9999)
+    print("Your participant ID is: %i" % (participant_id))
+    input("IMPORTANT: Please write down this ID. Press Enter when ready")
     log_file_path = initialize_log(participant_id=participant_id)
 
     all_trials, training_trials, test_trials = get_conditions(n_repetitions=n_rep, include_training_trials=True,
@@ -135,16 +136,10 @@ if __name__ == "__main__":
                                   str(simulator.world.agents["human"].decision), f"{simulator.world.agents['human'].response_time:.3f}",
                                   str(simulator.collision_detected), str(pet)])
 
-        # clean up
-        # world.clean()
-        # scenario.clean_world(world)
-        # simulator.quit()
-        # del simulator  # not sure if necessary
-
         time.sleep(0.5)
 
         # small break
         if i in break_after_trial:
             input("BREAK: Press Enter to continue")
 
-    print("EXPERIMENT DONE (FREEDOM!)")
+    print("EXPERIMENT FINISHED, THANK YOU!")
