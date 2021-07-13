@@ -29,6 +29,18 @@ class IntersectionWorld:
         self.t_pet_out_human = np.NAN
         self.t_pet_out_av = np.NAN
 
+
+    def reset(self):
+
+        # reset the post encroachment time parameters
+        self.human_in_pet_zone_prev = False
+        self.av_in_pet_zone_prev = False
+        self.t_pet_out_human = np.NAN
+        self.t_pet_out_av = np.NAN
+
+        # reset collision list
+        self.collision = []
+
     def create_intersection(self):
         # lanes
         self.lanes.append(VLane([self.p_intersection[0] - self.lane_width / 2., 0.],

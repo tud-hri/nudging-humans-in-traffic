@@ -98,7 +98,6 @@ if __name__ == "__main__":
 
     # specify after which trials to have an automatic break; note: trials start at 0!
     # three breaks
-    # break_after_trial = [len(training_trials) - 1, len(training_trials) + round(len(test_trials) / 3), len(training_trials) + round(2 * len(test_trials) / 3)]
     break_after_trial = [len(training_trials) - 1] + [int(ii) for ii in np.round(
         len(training_trials) + np.linspace(len(test_trials) / 4, len(test_trials), 3)).tolist()]  # hack hack hack
 
@@ -110,6 +109,7 @@ if __name__ == "__main__":
 
     for i, (d_condition, tau_condition, a_condition, s_condition, trial_type) in enumerate(all_trials):
         # scenario creates the agents in the world
+        world.reset()  # necessary to reset the post-encroachment time parameters
         scenario.setup_world(world=world, d0_av=d_condition, v0_av=d_condition / tau_condition, a_av=a_condition,
                              s_av=s_condition)
 
