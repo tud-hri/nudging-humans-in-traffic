@@ -66,7 +66,7 @@ For a later moment
 - [x] Write down the MPC's cost as a function of x and u - write the notes down
 ## Policy
 
-See this note: [av-policy.md](av-policy.md)
+See this note: [av-policy.md](notes/av-policy.md)
 
 ## Run
 

@@ -31,7 +31,7 @@ class Simulator:
         self.window.fill((33, 138, 33))  # green background
         pygame.display.flip()
 
-    def run(self):
+    def run_simulation(self):
         running = True
         paused = False
         t0 = pygame.time.get_ticks()
@@ -92,7 +92,7 @@ class Simulator:
 
             if self.collision_detected:
                 font = pygame.font.SysFont("verdana", 20)
-                txt_surface = font.render("Collision detected!", True, (255, 255, 255))
+                txt_surface = font.render("Collision! Wait 5 seconds", True, (255, 255, 255))
                 self.window.blit(txt_surface, txt_surface.get_rect(centerx=self.window.get_width() / 2, centery=self.window.get_height() / 2))
                 pygame.display.flip()
                 time.sleep(5.)
@@ -155,6 +155,7 @@ class Simulator:
         plt.show()
 
 
+# TODO: do we still need this?
 if __name__ == '__main__':
     # a whole new woooooorld
     my_world = IntersectionWorld(0.1, 80., 100.)

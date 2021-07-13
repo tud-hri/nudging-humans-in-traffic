@@ -1,4 +1,4 @@
-import human_models
+from modeling import human_models
 import ddm
 import pandas as pd
 import paranoid as pns

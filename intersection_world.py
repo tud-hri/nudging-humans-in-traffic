@@ -30,7 +30,6 @@ class IntersectionWorld:
         self.t_pet_out_av = np.NAN
 
     def create_intersection(self):
-
         # lanes
         self.lanes.append(VLane([self.p_intersection[0] - self.lane_width / 2., 0.],
                                 [self.p_intersection[0] - self.lane_width / 2., 120.], self.lane_width))
