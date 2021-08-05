@@ -91,7 +91,7 @@ class IntersectionWorld:
         self.av_in_pet_zone_prev = collision_detected
 
     def draw(self, window, ppm):
-        window.fill((33, 138, 33))
+        window.fill((63, 168, 63))
 
         for lane in self.lanes:
             lane.draw(window, ppm)
