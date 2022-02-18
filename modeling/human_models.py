@@ -65,8 +65,8 @@ class HumanModelDDMDynamicDrift(HumanModel):
 
         def get_drift(self, t, conditions, **kwargs):
             return self.drift_rate * (self.distance_gap_interp(t)
-                                      + self.alpha_time_gap*self.time_gap_interp(t)
-                                      + self.alpha_dtime_gap_dt*self.dtime_gap_dt_interp(t)
+                                      + self.alpha_time_gap * self.time_gap_interp(t)
+                                      + self.alpha_dtime_gap_dt * self.dtime_gap_dt_interp(t)
                                       - self.theta)
 
     def __init__(self, drift_rate=None, alpha_time_gap=None, alpha_dtime_gap_dt=None, theta=None, boundary=None,
@@ -99,3 +99,43 @@ class HumanModelDDMDynamicDrift(HumanModel):
         mean_rt = p_turn * mean_rt_turn + (1 - p_turn) * mean_rt_wait
 
         return -self.weight_p_turn * (p_turn - 0.5) ** 2 + self.weight_mean_rt * mean_rt
+
+
+class HumanModelDDMDynamicDriftFittable:
+    name = "Drift-diffusion model with the drift rate varying with distance, time gap, and acceleration of the " \
+           "oncoming car "
+    param_names = ["drift_rate", "alpha_d", "alpha_a", "theta",
+                   "boundary", "nondecision_time_loc", "nondecision_time_scale"]
+    T_dur = 3
+
+    class TimeVaryingDrift(ddm.models.Drift):
+        name = "Drift dynamically depends on distance to the oncoming vehicle"
+        required_parameters = ["drift_rate", "alpha_d", "alpha_a", "theta"]
+        required_conditions = ["d_condition", "tau_condition", "a_condition"]
+
+        def get_drift(self, t, conditions, **kwargs):
+            v = conditions['d_condition'] / conditions['tau_condition']
+            drift = self.drift_rate * (conditions['tau_condition'] - t
+                                       + self.alpha_d * (conditions['d_condition'] - v * t)
+                                       + self.alpha_a * conditions["a_condition"]
+                                       - self.theta)
+            # print("params: " + str([self.drift_rate, self.alpha_d, self.alpha_a, self.theta]))
+            # print("Drift rate: " + str(self.drift_rate))
+            # print("tau drift: {0}".format(str(conditions['tau_condition'] - t)))
+            # print("d drift: {0}".format(str(self.alpha_d * (conditions['d_condition'] - v * t))))
+            # print("a drift: {0}".format(str(self.alpha_a * conditions["a_condition"])))
+            # print("theta: " + str(self.theta))
+            # print("Total drift: {0}".format(str(drift)))
+            return drift
+
+    def __init__(self):
+        self.model = ddm.Model(
+            drift=self.TimeVaryingDrift(drift_rate=ddm.Fittable(minval=0.1, maxval=3),
+                                        alpha_d=ddm.Fittable(minval=0, maxval=1),
+                                        alpha_a=ddm.Fittable(minval=-5, maxval=0),
+                                        theta=ddm.Fittable(minval=4, maxval=40)),
+            noise=ddm.NoiseConstant(noise=1),
+            bound=ddm.BoundConstant(B=ddm.Fittable(minval=0.5, maxval=5)) ,
+            # overlay=ddm.OverlayNonDecisionUniform(nondectime=ddm.Fittable(minval=0, maxval=1),
+            #                                       halfwidth=ddm.Fittable(minval=0.001, maxval=0.4)),
+            T_dur=self.T_dur, dt=.001)

@@ -3,7 +3,7 @@ from casadi import *
 from pygame.locals import *
 
 from dynamics import CarDynamics
-from human_models import HumanModel
+from modeling.human_models import HumanModel
 from trajectory import Trajectory
 from utils import coordinate_transform
 
@@ -21,13 +21,14 @@ class Car:
         self.car_width = 2.  # width of the car
         self.car_length = self.dynamics.length
         self.color = color
+        self.rect = pygame.Rect(round(p0[0] * 10), round(p0[1] * 10), 10, 10)
 
         self.image = pygame.image.load("img/car-{0}.png".format(self.color))
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         pass
 
-    def tick(self, sim_time: float):
+    def tick(self, sim_time: float, step: int):
         """
         Perform one integration step of the dynamics
         This is an override of the Entity.tick function, to enable us to define our own dynamics
@@ -35,6 +36,7 @@ class Car:
         :param sim_time: simulation time stamp
         :return: car state
         """
+
         x_next = self.dynamics.integrate(self.x, self.u)
         self.x = x_next.full()  # casadi DM to np.array
 
@@ -43,17 +45,16 @@ class Car:
 
     def draw(self, window, ppm):
         # coordinate transform to graphics coordinate frame
-        p = self.x[0:2] * ppm
-        p = coordinate_transform(p)
+        p = coordinate_transform(self.x[0:2], ppm)
 
         img = pygame.transform.scale(self.image, (int(self.car_length * ppm), int(self.car_width * ppm)))
         img = pygame.transform.rotate(img, np.rad2deg(self.x[2]))
 
         # calculate center position for drawing
-        img_rect = img.get_rect()
-        img_rect.center = (p[0, 0], p[1, 0])
+        self.rect = img.get_rect()
+        self.rect.center = (p[0, 0], p[1, 0])
 
-        window.blit(img, img_rect)
+        window.blit(img, self.rect)
 
     def __str__(self):
         return "state: {}".format(self.x.T)
@@ -80,16 +81,18 @@ class Car:
             dh = casadi.cos(theta) * d[0] - casadi.sin(theta) * d[1]
             dw = casadi.sin(theta) * d[0] + casadi.cos(theta) * d[1]
 
-            f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (sdy * sqrt(2. * np.pi)) * casadi.exp(
+            f[0, k] = 1. / (sdx * sqrt(2. * np.pi)) * casadi.exp(-0.5 * dh ** 2 / sdx ** 2) * 1. / (
+                    sdy * sqrt(2. * np.pi)) * casadi.exp(
                 -0.5 * dw ** 2 / sdy ** 2)
         return f
 
     def text_state_render(self):
         font = pygame.font.SysFont("verdana", 12)
-        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f} | u_a: {4:+.2f}, u_d: {5:-.2f}, u_dr: {6: .2f}".format(self.x[0, 0], self.x[1, 0],
-                                                                                                                           self.x[2, 0],
-                                                                                                                           self.x[3, 0], self.u[0, 0],
-                                                                                                                           self.u[1, 0], self.u[2, 0])  #
+        text = "x: {0: .1f}, y: {1: .1f}, psi: {2: .2f}, v:{3: .1f} | u_a: {4:+.2f}, u_d: {5:-.2f}, u_dr: {6: .2f}".format(
+            self.x[0, 0], self.x[1, 0],
+            self.x[2, 0],
+            self.x[3, 0], self.u[0, 0],
+            self.u[1, 0], self.u[2, 0])  #
         return font.render(text, True, self.color)
 
     @property
@@ -101,13 +104,35 @@ class Car:
         return self.x[3]
 
 
+class CarPredefinedControl(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'blue'):
+        super(CarPredefinedControl, self).__init__(p0, phi0, v0, world, color)
+        self.u_predefined = np.zeros(self.u.shape)
+
+    def calculate_action(self, sim_time: float, step: int):
+        # select the action from the predefined control trace
+
+        # cap step within bounds of u_predefined
+        step = min(max(0, step), self.u_predefined.shape[1] - 1)
+
+        self.u = self.u_predefined[:, [step]]
+
+        # constrain the car's velocity [0, 120km/h]
+        # stop the car if stopped.
+        if any(self.u[0:2] < 0) and self.x[3] <= 0.:
+            self.u[0:2] = 0.
+
+        if any(self.u[0:2] > 0) and self.x[3] >= 120./3.6:
+            self.u[0:2] = 0.
+
+
 class CarUserControlled(Car):
     def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'blue'):
         super(CarUserControlled, self).__init__(p0, phi0, v0, world, color)
         self.accelerate_int = 0.
         self.steer_int = 0.
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         accelerate_sensitivity = 2.  # [m/s2 / s]
         decelerate_sensitivity = 3.
         steer_sensitivity = 1.5 * np.pi  # [rad/s]
@@ -168,12 +193,15 @@ class CarMPC(Car):
 
     def set_constraints(self):
         for k in range(0, self.Nh):
-            self.opti.subject_to(self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
+            self.opti.subject_to(
+                self.x_opti[:, k + 1] == self.dynamics.integrate(x=self.x_opti[:, k], u=self.u_opti[:, k]))
 
         self.opti.subject_to(self.opti.bounded(0., self.u_opti[0, :], 10.))  # acceleration, only positive, in m/s2
         self.opti.subject_to(self.opti.bounded(-20., self.u_opti[1, :], 0.))  # deceleration, only negative, in m/s2
-        self.opti.subject_to(self.opti.bounded(-0.5 * np.pi, self.u_opti[2, :], 0.5 * np.pi))  # steering wheel input (rad)
-        self.opti.subject_to(sumsqr(self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
+        self.opti.subject_to(
+            self.opti.bounded(-0.5 * np.pi, self.u_opti[2, :], 0.5 * np.pi))  # steering wheel input (rad)
+        self.opti.subject_to(sumsqr(
+            self.u_opti[0] * self.u_opti[1]) < 1e-6)  # product of acc / dec needs to be 0 (only acc or dec at a time)
         self.opti.subject_to(self.opti.bounded(0. / 3.6, self.x_opti[3, :], 80. / 3.6))  # speed
         self.opti.subject_to(self.p_opti_x0 == self.x_opti[:, 0])  # initial condition for each solver call
 
@@ -229,10 +257,12 @@ class CarMPC(Car):
         # 3. create the objective function in CasADi symbolics.
         self.obstacles = obstacles
         if obstacles is not None:
-            self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(obstacles))  # assume obstacles have the same state [x,y,psi,v]
+            self.p_opti_x_obstacles = self.opti.parameter(self.nx, len(
+                obstacles))  # assume obstacles have the same state [x,y,psi,v]
             for i in range(len(obstacles)):
                 self.cost_function += self.theta[5] * sum2(
-                    obstacles[i].feature_collision(sdx=2.5, sdy=1.25, x_eval=self.x_opti, x_ego_sym=self.p_opti_x_obstacles[:, i])
+                    obstacles[i].feature_collision(sdx=2.5, sdy=1.25, x_eval=self.x_opti,
+                                                   x_ego_sym=self.p_opti_x_obstacles[:, i])
                 )
 
         # input / control effort
@@ -268,16 +298,16 @@ class CarMPC(Car):
 
         return u
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         self.u = self.solve_opt_problem()
 
     def draw(self, window, ppm):
         super().draw(window, ppm)
 
         # show planned path (convert from m to pixels, and then coordinate transform)
-        p = self.x_mpc[0:2, :] * ppm
+        p = self.x_mpc[0:2, :]
         if p.shape[1] > 1:
-            pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x)) for x in p.T.tolist()])
+            pygame.draw.lines(window, self.color, False, [tuple(coordinate_transform(x, ppm)) for x in p.T.tolist()])
 
 
 class CarSimulatedHuman(CarMPC):
@@ -290,7 +320,7 @@ class CarSimulatedHuman(CarMPC):
         self.t_decision = None
         self.is_turn_completed = False
 
-    def calculate_action(self, sim_time: float):
+    def calculate_action(self, sim_time: float, step: int):
         # fixme: this currently assumes that the human starts deciding from the very beginning of the simulation, might not be the case!
         if self.decision is None:
             print("The simulated human is thinking...")
@@ -306,3 +336,55 @@ class CarSimulatedHuman(CarMPC):
             super().calculate_action(sim_time)  # let MPC set the input for the car
             if self.x[0] < 20.:
                 self.is_turn_completed = True
+
+
+class CarHumanTriggeredPD(Car):
+    def __init__(self, p0, phi0: float, v0: float = 0., world=None, color: str = 'red'):
+        super(CarHumanTriggeredPD, self).__init__(p0, phi0, v0, world, color)
+        self.decision = None
+        self.response_time = -1.
+        # self.decision_go = False
+        # self.decision_stay = False
+
+        # desired state
+        self.v_des = 50. / 3.6
+        self.phi_des = np.pi
+        self.y_des = world.lanes[3].p0[1]
+
+        # gains (proportional only for now)
+        self.K_v = 2.
+        self.K_y = 0.23
+        self.K_psi = 1.
+
+    def calculate_action(self, sim_time: float, step: int):
+        keys = pygame.key.get_pressed()
+
+        # if go key
+        if self.decision is None:
+            if keys[K_LEFT] or keys[K_z]:
+                self.decision = "go"
+            elif keys[K_s] or keys[K_SLASH]:
+                self.decision = "stay"
+
+            if not (self.decision is None):
+                self.response_time = sim_time
+                # print(f"Decision: {self.decision}")
+                # print(f"Response time: {self.response_time:.3f}")
+
+        # if decision is made, use a simple PD to control the car
+        if self.decision == "go":
+            # super().calculate_action(sim_time)
+            self.u = np.zeros((3, 1))
+
+            # acceleration
+            a = self.K_v * (self.v_des - self.x[3])
+            a = min(max(a, -10), 5)
+
+            if np.sign(a) == 1:
+                self.u[0] = a
+            elif np.sign(a) == -1:
+                self.u[1] = a
+
+            # steering
+            s = self.K_psi * (self.phi_des - self.x[2]) - self.K_y * (self.y_des - self.x[1])
+            self.u[2] = min(max(s, -np.pi), np.pi)

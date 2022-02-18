@@ -8,9 +8,9 @@ import numpy as np
 import pygame
 
 
-def coordinate_transform(p):
+def coordinate_transform(p, ppm):
     _, h = pygame.display.get_surface().get_size()
-    return np.array([p[0], h - p[1]])
+    return np.array([p[0] * ppm, h - p[1] * ppm])
 
 
 def rotmatrix_casadi(phi):

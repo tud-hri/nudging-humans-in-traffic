@@ -30,6 +30,14 @@ class Lane:
     def feature_lane_center(self, c, x):
         pass
 
+    @property
+    def x_center_m(self):
+        return self.p0[0]
+
+    @property
+    def y_center_m(self):
+        return self.p0[1]
+
 
 class HLane(Lane):
     def __init__(self, p0, p1, width):
@@ -37,12 +45,10 @@ class HLane(Lane):
 
     def draw(self, window, ppm=6):
         # transform normal coordinate system (x: right, y: up, bottom left =(0,0)) to graphics coordinates (x: right, y: down, top left = (0,0))
-        p0 = self.p0 * ppm
-        p1 = self.p1 * ppm
         width = self.width * ppm
 
-        p0 = coordinate_transform(p0)
-        p1 = coordinate_transform(p1)
+        p0 = coordinate_transform(self.p0, ppm)
+        p1 = coordinate_transform(self.p1, ppm)
 
         self.rect.left = min(p0[0], p1[0])
         self.rect.top = min(p0[1], p1[1]) - width / 2.
@@ -51,13 +57,16 @@ class HLane(Lane):
 
         pygame.draw.rect(window, self.color, self.rect)
 
-        # # draw road lines
-        # line_color = (240, 240, 240)
-        # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.right, rect.bottom), 1)
-        # pygame.draw.line(window, line_color, (rect.left, rect.top), (rect.right, rect.top), 1)
-
     def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[1, :] - self.p0[1]) ** 2)
+
+    @property
+    def x_bottom_m(self):
+        return self.p0[0] - self.width / 2.
+
+    @property
+    def x_top_m(self):
+        return self.p0[0] + self.width / 2.
 
 
 class VLane(Lane):
@@ -65,13 +74,11 @@ class VLane(Lane):
         super(VLane, self).__init__(p0, p1, width)
 
     def draw(self, window, ppm=6):
-        p0 = self.p0 * ppm
-        p1 = self.p1 * ppm
         width = self.width * ppm
 
         # transform normal coordinate system (x: right, y: up, bottom left =(0,0)) to graphics coordinates (x: right, y: down, top left = (0,0))
-        p0 = coordinate_transform(p0)
-        p1 = coordinate_transform(p1)
+        p0 = coordinate_transform(self.p0, ppm)
+        p1 = coordinate_transform(self.p1, ppm)
 
         self.rect.left = min(p0[0], p1[0]) - width / 2.
         self.rect.top = min(p0[1], p1[1])
@@ -82,11 +89,19 @@ class VLane(Lane):
 
         # # draw road lines
         # line_color = (240, 240, 240)
-        # pygame.draw.line(window, line_color, (rect.left, rect.bottom), (rect.left, rect.top), 1)
-        # pygame.draw.line(window, line_color, (rect.right, rect.bottom), (rect.right, rect.top), 1)
+        # pygame.draw.line(window, line_color, (self.rect.left, self.rect.bottom), (self.rect.left, self.rect.top), 1)
+        # pygame.draw.line(window, line_color, (self.rect.right, self.rect.bottom), (self.rect.right, self.rect.top), 1)
 
     def feature_lane_center(self, x, c=0.25):
         return casadi.exp(-c * (x[0, :] - self.p0[0]) ** 2)
+
+    @property
+    def x_left_m(self):
+        return self.p0[0] - self.width / 2.
+
+    @property
+    def x_right_m(self):
+        return self.p0[0] + self.width / 2.
 
 
 class HShoulder:

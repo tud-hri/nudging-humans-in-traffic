@@ -7,7 +7,14 @@ Making automated vehicles more compatible with humans by endowing AVs with human
 Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [model code](https://osf.io/x3ns6/).
 
 ## To do
+Primary
+- [ ] HREC application for open-loop experiments - Arkady
+- [x] Arrange meeting with David before June 7, or else after 18 - Arkady
+- [ ] Pilot the version 2 experiment - Arkady
+- [ ] Organize data collection for Thu/Fri - Arkady
+- [x] Include decision moment in AV car - Niek
 
+For a later moment
 - [ ] Data visualization
     - [ ] Visualize agent dynamics and human decision in real-time - Arkady
 - [ ] Prototype simple path planner in casadi - Niek 09/03
@@ -22,7 +29,7 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 
 ## Doing
 
-- [x] Write down the MPC's cost as a function of x and u - write the notes down
+
 
 ## Done
 
@@ -56,10 +63,10 @@ Arkady's evidence accumulation model: [paper](https://psyarxiv.com/p8dxn/) and [
 - [x] Split acceleration and deceleration inputs
 - [x] Make simulated human target dynamic (may be a good idea to put this in the `Trajectory` object)
 - [x] Data visualization: plot state after simulation run
-
+- [x] Write down the MPC's cost as a function of x and u - write the notes down
 ## Policy
 
-See this note: [av-policy.md](av-policy.md)
+See this note: [av-policy.md](notes/av-policy.md)
 
 ## Run
 
