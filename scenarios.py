@@ -1,7 +1,7 @@
 import numpy as np
 
 import agents
-from modeling import human_models
+from modeling_obsolete import human_models
 from intersection_world import IntersectionWorld
 
 class Scenario:

@@ -3,7 +3,7 @@ from casadi import *
 from pygame.locals import *
 
 from dynamics import CarDynamics
-from modeling.human_models import HumanModel
+from modeling_obsolete.human_models import HumanModel
 from trajectory import Trajectory
 from utils import coordinate_transform
 

@@ -128,6 +128,23 @@ class HumanModelDDMDynamicDriftFittable:
             # print("Total drift: {0}".format(str(drift)))
             return drift
 
+    # def __init__(self, gaze_sample):
+    #     super(ModelGazeDependent, self).__init__()
+    #     t = np.linspace(0, self.T_dur, len(gaze_sample))
+    #     gaze_sample_f = interpolate.interp1d(t, gaze_sample)
+    #
+    #     # TODO: this assumes that gaze_sample is defined over T_dur - fix this
+    #     self.drift = DriftGaze(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
+    #                            beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
+    #                            beta_tta_or=pyddm.Fittable(minval=0, maxval=1.0),
+    #                            theta=pyddm.Fittable(minval=0, maxval=20),
+    #                            gamma=pyddm.Fittable(minval=0, maxval=1.0),
+    #                            gaze_sample_f=gaze_sample_f)
+    #
+    #     self.model = pyddm.Model(name="Gaze-dependent drift, bounds collapsing with TTA and TTA_or",
+    #                              drift=self.drift, noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
+    #                              overlay=self.overlay, T_dur=self.T_dur)
+
     def __init__(self):
         self.model = ddm.Model(
             drift=self.TimeVaryingDrift(drift_rate=ddm.Fittable(minval=0.1, maxval=3),

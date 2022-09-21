@@ -6,7 +6,9 @@ Static functions for common utilities
 import casadi
 import numpy as np
 import pygame
-
+import os
+import csv
+import pyddm
 
 def coordinate_transform(p, ppm):
     _, h = pygame.display.get_surface().get_size()
@@ -46,3 +48,19 @@ def get_derivative(t, x):
          5 * (x[4:-2] - x[2:-4]) / ((t[4:-2] - t[2:-4]) / 2)) / 32
 
     return v
+
+
+def write_to_csv(directory, filename, array, write_mode="a"):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    with open(os.path.join(directory, filename), write_mode, newline="") as csvfile:
+        writer = csv.writer(csvfile, delimiter=",")
+        writer.writerow(array)
+
+def fit_model(model, training_data, loss_function):
+    training_sample = pyddm.Sample.from_pandas_dataframe(df=training_data, rt_column_name="RT",
+                                                         correct_column_name="is_gap_accepted")
+    fitted_model = pyddm.fit_adjust_model(sample=training_sample, model=model, lossfunction=loss_function, verbose=False)
+    # pyddm.plot.plot_fit_diagnostics(model=fitted_model, sample=training_sample)
+
+    return fitted_model

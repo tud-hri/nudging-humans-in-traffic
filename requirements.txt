@@ -1,6 +1,7 @@
 pygame
 numpy
 casadi
-pyddm
+jupyter
 pandas
 seaborn
+pyddm
