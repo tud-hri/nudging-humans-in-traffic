@@ -56,11 +56,3 @@ def write_to_csv(directory, filename, array, write_mode="a"):
     with open(os.path.join(directory, filename), write_mode, newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=",")
         writer.writerow(array)
-
-def fit_model(model, training_data, loss_function):
-    training_sample = pyddm.Sample.from_pandas_dataframe(df=training_data, rt_column_name="RT",
-                                                         correct_column_name="is_gap_accepted")
-    fitted_model = pyddm.fit_adjust_model(sample=training_sample, model=model, lossfunction=loss_function, verbose=False)
-    # pyddm.plot.plot_fit_diagnostics(model=fitted_model, sample=training_sample)
-
-    return fitted_model

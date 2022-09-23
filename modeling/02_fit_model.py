@@ -4,46 +4,39 @@ import models
 import loss_functions
 import pandas as pd
 import os
-
 import utils
 
+def fit_model(model, training_data, loss_function):
+    training_sample = pyddm.Sample.from_pandas_dataframe(df=training_data, rt_column_name="RT",
+                                                         correct_column_name="is_go_decision")
+    fitted_model = pyddm.fit_adjust_model(sample=training_sample, model=model, lossfunction=loss_function, verbose=False)
+    # pyddm.plot.plot_fit_diagnostics(model=fitted_model, sample=training_sample)
 
-def get_mean_gaze_rate(simulation_params):
-    gaze_time_step = 0.05
-    # proportion of time the participants look at the two areas of interest -  calculated based on raw gaze data
-    p_aoi = 0.92
-
-    # First cut to the simulation duration
-    mean_gaze_rate = np.genfromtxt("mean_gaze_rate.csv")[:int(simulation_params["duration"]/gaze_time_step)+1]
-
-    # Second resample to the simulation dt
-    x = np.linspace(0, simulation_params["duration"], int(simulation_params["duration"]/simulation_params["dt"]+1))
-    xp = np.linspace(0, simulation_params["duration"], int(simulation_params["duration"]/gaze_time_step+1))
-    mean_gaze_rate_resampled = np.interp(x, xp, mean_gaze_rate)/p_aoi
-
-    return mean_gaze_rate_resampled
-
-def get_gaze_sample_synthetic(simulation_params):
-    # In a typical trial, participants looked
-    # 1) at the on-ramp for a short time - 300 ms
-    # 2) at the mirror for 700 ms
-    # 3) back at the on-ramp for the rest of the trial
-    # TODO: replace this fake gaze sample with the actual average from the experiment
-    return np.concatenate([np.zeros(int(0.3/simulation_params["dt"])), np.ones(int(0.7/simulation_params["dt"])),
-                           np.zeros(int((simulation_params["duration"]-1.0)/simulation_params["dt"])+1)])
+    return fitted_model
 
 def fit_model_by_condition(subj_idx=0, loss="vincent"):
-    # HACK: for now the model is fitted conditional on one "average" gaze sample - we assume that the same
-    #  parameter values can predict response of the model to individual gaze samples.
-    simulation_params = {"dt": 0.01, "duration": 4.0}
-    gaze_sample = get_mean_gaze_rate(simulation_params)
+    simulation_params = {"dt": 0.1, "n": 40, "duration": 5.0}
 
-    # model = models.ModelDynamicDriftCollapsingBounds()
-    model = models.ModelGazeDependent(gaze_sample)
-    # model = models.ModelGazeDependentBoundGeneralizedGap(gaze_sample)
+    # Problem 1: get tta, d, a interpolators for a single condition
 
-    exp_data = pd.read_csv("measures.csv")
-    exp_data = exp_data[exp_data.RT < 4.0]
+    # Problem 2: loop over all condition combinations and pack all interpolators in a dictionary or smth
+
+    # interpolators = {condition: value for (condition, value) in data}
+     # = [[f_tta, f_d, f_a] for condition ]
+    # then this function will just look up the
+    def f_get_env_state(t, conditions):
+        f_tta, f_d, f_a = interpolators[conditions]
+        tta = f_tta(t)
+        d = f_d(t)
+        a = f_a(t)
+        return tta, d, a
+
+    # model = models.ModelTtaDistance()
+    model = models.ModelFixedAcceleration(f_get_env_state=f_get_env_state)
+    # model = models.ModelAccelerationDependent(simulation_params["n"])
+
+    exp_data = pd.read_csv("../data/experiment1-3d/measures.csv")
+    exp_data = exp_data[exp_data.RT < simulation_params["duration"]]
     subjects = exp_data.subj_id.unique()
 
     if subj_idx == "all":
@@ -55,7 +48,7 @@ def fit_model_by_condition(subj_idx=0, loss="vincent"):
         subj_data = exp_data[(exp_data.subj_id == subj_id)]
         loss = loss_functions.LossWLS
 
-    output_directory = "model_fit_results/gaze_dependent_bound_generalized_gap_model"
+    output_directory = "fit_results/drift_tta_distance"
 
     file_name = "subj_%s_parameters_fitted.csv" % (str(subj_id))
     if not os.path.isfile(os.path.join(output_directory, file_name)):
@@ -66,7 +59,7 @@ def fit_model_by_condition(subj_idx=0, loss="vincent"):
     training_data = subj_data
     print("len(training_data): " + str(len(training_data)))
 
-    fitted_model = utils.fit_model(model.model, training_data, loss)
+    fitted_model = fit_model(model.model, training_data, loss)
     utils.write_to_csv(output_directory, file_name,
                         [subj_id, fitted_model.get_fit_result().value()]
                         + [float(param) for param in fitted_model.get_model_parameters()])
