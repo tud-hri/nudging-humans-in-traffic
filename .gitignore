@@ -10,7 +10,7 @@ __pycache__/
 *.so
 
 # csv data files
-./img
+data_collection_2d/img
 
 # Distribution / packaging
 .Python

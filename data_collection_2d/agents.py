@@ -2,9 +2,9 @@ import pygame
 from casadi import *
 from pygame.locals import *
 
-from dynamics import CarDynamics
+from data_collection_2d.dynamics import CarDynamics
 from modeling_obsolete.human_models import HumanModel
-from trajectory import Trajectory
+from data_collection_2d.trajectory import Trajectory
 from utils import coordinate_transform
 
 

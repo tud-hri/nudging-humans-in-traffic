@@ -43,8 +43,8 @@ def get_policy_cost(t, distance_gap, time_gap, dtime_gap_dt):
 
 
 def test_get_policy_cost():
-    av_trajectory = pd.read_csv("../data/av_trajectory.csv")
-    human_trajectory = pd.read_csv("../data/human_trajectory.csv")
+    av_trajectory = pd.read_csv("../data/pilot0/av_trajectory.csv")
+    human_trajectory = pd.read_csv("../data/pilot0/human_trajectory.csv")
     t = av_trajectory.t
     distance_gap = np.sqrt((av_trajectory.x - human_trajectory.x[0]) ** 2
                            + (av_trajectory.y - human_trajectory.y[0]) ** 2)

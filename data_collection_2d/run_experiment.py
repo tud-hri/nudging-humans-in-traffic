@@ -11,9 +11,9 @@ from enum import Enum
 
 import numpy as np
 
-from scenarios import ScenarioOpenLoopInteraction
+from data_collection_2d.scenarios import ScenarioOpenLoopInteraction
 from intersection_world import IntersectionWorld
-from simulator import Simulator
+from data_collection_2d.simulator import Simulator
 
 
 class TrialType(Enum):

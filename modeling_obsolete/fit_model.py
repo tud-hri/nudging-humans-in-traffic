@@ -4,7 +4,7 @@ import pandas as pd
 import paranoid as pns
 pns.settings.Settings.set(enabled=False)
 
-data = pd.read_csv('data/pilot0/participant_1_2021_05_22_20_32.csv', sep='\t',
+data = pd.read_csv('../data/pilot0/participant_1_2021_05_22_20_32.csv', sep='\t',
                    usecols=["participant_id", "d_condition", "tau_condition", "a_condition", "decision", "RT"])
 
 data["is_turn_decision"] = data.decision == "go"
