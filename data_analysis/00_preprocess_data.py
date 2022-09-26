@@ -26,8 +26,8 @@ def get_measures(traj):
         # so we can count on the first moment the bot velocity is non-zero as the moment the bot became visible first
         # this is what we take as the decision start time
         # idx_truck_moving = traj.truck_v.to_numpy().nonzero()[0][0]
-        idx_bot_moving = traj.bot_v.to_numpy().nonzero()[0][0]
-        idx_bot_visible = idx_bot_moving + np.argmax(traj.bot_angle[idx_bot_moving:] - traj.truck_angle[idx_bot_moving:] < 0)
+        # idx_bot_visible = idx_bot_moving + np.argmax(traj.bot_angle[idx_bot_moving:] - traj.truck_angle[idx_bot_moving:] < 0)
+        idx_bot_visible = traj.bot_v.to_numpy().nonzero()[0][0]
         throttle = traj.iloc[idx_bot_visible:, traj.columns.get_loc("throttle")]
         idx_gas_response = idx_bot_visible + (throttle > 0).to_numpy().nonzero()[0][0]
         RT_gas = traj.t.values[idx_gas_response] - traj.t.values[idx_bot_visible]
@@ -101,12 +101,12 @@ def process_data(data):
 
     # get the DVs and helper variables
     measures = data.groupby(data.index.names).apply(get_measures)
-    print(len(measures))
+    print("Number of trials before exclusions: %i" % len(measures))
 
-    # exclude three participants who have very high (>50%) rate of premature responses in "go" trials
+    # exclude four participants who have very high (>50%) rate of premature responses in "go" trials
     # and one participant who has very high (>50%) proportion of "stay" trials without pressing the yield button
-    measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([200, 542, 543, 746, 774])]
-    data = data.iloc[~data.index.get_level_values("subj_id").isin([200, 542, 543, 746, 774])]
+    measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
+    data = data.iloc[~data.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
 
     # data = data.join(measures)
     measures["is_go_decision"] = measures.min_distance > 5
@@ -132,6 +132,8 @@ def process_data(data):
 
     measures["RT"] = measures["RT_gas"]
     measures.loc[~measures.is_go_decision, ["RT"]] = measures.loc[~measures.is_go_decision, ["RT_yield"]].values
+
+    print("Number of trials after exclusions: %i" % len(measures))
 
     return data, measures
 

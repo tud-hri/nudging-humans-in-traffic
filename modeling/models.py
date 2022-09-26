@@ -3,6 +3,35 @@ from scipy import stats
 import pyddm
 from scipy import interpolate
 
+def get_state_interpolators(tta_0, d_0, a_1, a_2):
+    T_dur = 5.0
+    breakpoints = np.array([0., 0.25, 1.25, 2.25] + [T_dur])
+
+    a_values = np.array([0.0, a_1, a_2, 0.0, 0.0])
+
+    v_0 = d_0 / tta_0
+    # a_values = np.concatenate([[0], [a_1, a_2], [0., 0.]])
+    # a_values = np.concatenate([a_values, [0.]])
+    v_values = np.concatenate([[v_0], v_0 + np.cumsum(np.diff(breakpoints) * a_values[:-1])])
+    d_values = np.concatenate([[d_0], d_0 - np.cumsum(np.diff(breakpoints) * (v_values[1:] + v_values[:-1]) / 2)])
+    tta_values = d_values / v_values
+
+    # acceleration is piecewise-constant
+    f_a = interpolate.interp1d(breakpoints, a_values, kind=0)
+    # under piecewise-constant acceleration, tta is piecewise-linear
+    # f_v = interpolate.interp1d(acceleration_timings, v_condition, kind=1, fill_value=(v_0, v_0), bounds_error=False)
+    f_tta = interpolate.interp1d(breakpoints, tta_values, kind=1)
+    # under piecewise-linear v, d is piecewise-quadratic, but piecewise-linear approximation is very close
+    f_d = interpolate.interp1d(breakpoints, d_values, kind=1)
+
+    return f_tta, f_d, f_a
+
+def f_get_env_state(t, conditions):
+    f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_1"], conditions["a_2"])
+    tta = f_tta(t)
+    d = f_d(t)
+    a = f_a(t)
+    return tta, d, a
 
 class OverlayNonDecisionGaussian(pyddm.Overlay):
     """ Courtesy of the pyddm cookbook """
@@ -28,23 +57,23 @@ class OverlayNonDecisionGaussian(pyddm.Overlay):
 class BoundCollapsingTta(pyddm.models.Bound):
     name = "Bounds dynamically collapsing with TTA"
     required_parameters = ["b_0", "k", "tta_crit"]
-    required_conditions = ["tta_0", "d_0", "a_condition"]
+    required_conditions = ["tta_0", "d_0"]
 
     def get_bound(self, t, conditions, **kwargs):
-        tta = conditions["tta_condition"] - t
+        tta = conditions["tta_0"] - t
         return self.b_0 / (1 + np.exp(-self.k * (tta - self.tta_crit)))
 
 
 class DriftTtaDistance(pyddm.models.Drift):
     name = "Drift dynamically depends on the real-time values of distance, TTA, and acceleration"
     required_parameters = ["alpha", "beta_d", "theta"]
-    required_conditions = ["d_0", "tta_0"]
+    required_conditions = ["tta_0", "d_0", "a_values"]
     # coefficient in front of tta is always 1.0
     beta_tta = 1.0
 
     def get_drift(self, t, conditions, **kwargs):
-        return self.alpha * (self.beta_tta * (conditions["tta_condition"] - t)
-                             + self.beta_d * conditions["d_condition"] * (1 - t / conditions["tta_condition"])
+        return self.alpha * (self.beta_tta * (conditions["tta_0"] - t)
+                             + self.beta_d * conditions["d_0"] * (1 - t / conditions["tta_0"])
                              - self.theta)
 
 class ModelTtaDistance:
@@ -66,28 +95,28 @@ class ModelTtaDistance:
 
 class DriftFixedAcceleration(pyddm.models.Drift):
     name = "Same as DriftTtaDistance, but TTA(t) and d(t) are calculated through a function supplied externally"
-    required_parameters = ["alpha", "beta_d", "theta", "f_get_env_state"]
-    required_conditions = ["d_0", "tta_0", "a_condition"]
+    required_parameters = ["alpha", "beta_d", "theta"]#, "f_get_env_state"]
+    required_conditions = ["tta_0", "d_0"]
     # coefficient in front of tta is always 1.0
     beta_tta = 1.0
 
     def get_drift(self, t, conditions, **kwargs):
-        tta, d, a = self.f_get_env_state(t, conditions)
+        tta, d, a = f_get_env_state(t, conditions)
         return self.alpha * (self.beta_tta * tta + self.beta_d * d - self.theta)
 
 
 class ModelFixedAcceleration:
-    T_dur = 4.0
+    T_dur = 5.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
-    def __init__(self, f_get_env_state):
+    def __init__(self):
         self.overlay = OverlayNonDecisionGaussian(ndt_location=pyddm.Fittable(minval=0, maxval=2.0),
                                                   ndt_scale=pyddm.Fittable(minval=0.001, maxval=0.5))
 
         self.drift = DriftFixedAcceleration(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
                                             beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
-                                            theta=pyddm.Fittable(minval=0, maxval=20),
-                                            f_get_env_state=f_get_env_state)
+                                            theta=pyddm.Fittable(minval=0, maxval=20))#,
+                                            # f_get_env_state=f_get_env_state)
 
         self.bound = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
                                         k=pyddm.Fittable(minval=0.1, maxval=2.0),
@@ -98,23 +127,70 @@ class ModelFixedAcceleration:
                                  overlay=self.overlay, T_dur=self.T_dur)
 
 
-class ModelAccelerationDependent():
+class DriftAccelerationDependent(pyddm.models.Drift):
+    name = "Drift depends on tta(t), d(t), and a(t)"
+    required_parameters = ["alpha", "beta_d", "beta_a", "theta"]#, "f_get_env_state"]
+    required_conditions = ["tta_0", "d_0", "a_values"]
+    # coefficient in front of tta is always 1.0
+    beta_tta = 1.0
+
+    def get_drift(self, t, conditions, **kwargs):
+        tta, d, a = f_get_env_state(t, conditions)
+        return self.alpha * (self.beta_tta * tta + self.beta_d * d - self.beta_a*a - self.theta)
+
+
+class ModelAccelerationDependent:
+    T_dur = 5.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
-    def __init__(self, gaze_sample):
-        super(ModelAccelerationDependent, self).__init__()
-        t = np.linspace(0, self.T_dur, len(gaze_sample))
+    def __init__(self):
+        self.overlay = OverlayNonDecisionGaussian(ndt_location=pyddm.Fittable(minval=0, maxval=2.0),
+                                                  ndt_scale=pyddm.Fittable(minval=0.001, maxval=0.5))
 
-        get_env_state_f = interpolate.interp1d(t, gaze_sample)
+        self.drift = DriftAccelerationDependent(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
+                                            beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
+                                            beta_a=pyddm.Fittable(minval=0.0, maxval=10.0),
+                                            theta=pyddm.Fittable(minval=0, maxval=20))#,
+                                            # f_get_env_state=f_get_env_state)
 
-        # TODO: this assumes that gaze_sample is defined over T_dur - fix this
-        self.drift = DriftGaze(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
-                               beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
-                               beta_tta_or=pyddm.Fittable(minval=0, maxval=1.0),
-                               theta=pyddm.Fittable(minval=0, maxval=20),
-                               gamma=pyddm.Fittable(minval=0, maxval=1.0),
-                               gaze_sample_f=get_env_state_f)
+        self.bound = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
+                                        k=pyddm.Fittable(minval=0.01, maxval=2.0),
+                                        tta_crit=pyddm.Fittable(minval=2.0, maxval=10.0))
 
-        self.model = pyddm.Model(name="Gaze-dependent drift, bounds collapsing with TTA and TTA_or",
-                                 drift=self.drift, noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
+        self.model = pyddm.Model(name="Model 3", drift=self.drift,
+                                 noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
+                                 overlay=self.overlay, T_dur=self.T_dur)
+
+class DriftAccelerationDependent_v2(pyddm.models.Drift):
+    name = "Drift depends on tta(t), d(t), and a(t)"
+    required_parameters = ["alpha", "beta_d", "beta_a", "theta"]#, "f_get_env_state"]
+    required_conditions = ["tta_0", "d_0", "a_1", "a_2"]
+    # coefficient in front of tta is always 1.0
+    beta_tta = 1.0
+
+    def get_drift(self, t, conditions, **kwargs):
+        tta, d, a = f_get_env_state(t, conditions)
+        return self.alpha * (self.beta_tta * tta + self.beta_d * d - self.beta_a*a - self.theta)
+
+
+class ModelAccelerationDependent_v2:
+    T_dur = 5.0
+    param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
+
+    def __init__(self):
+        self.overlay = OverlayNonDecisionGaussian(ndt_location=pyddm.Fittable(minval=0, maxval=2.0),
+                                                  ndt_scale=pyddm.Fittable(minval=0.001, maxval=0.5))
+
+        self.drift = DriftAccelerationDependent_v2(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
+                                            beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
+                                            beta_a=pyddm.Fittable(minval=0.0, maxval=10.0),
+                                            theta=pyddm.Fittable(minval=0, maxval=20))#,
+                                            # f_get_env_state=f_get_env_state)
+
+        self.bound = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
+                                        k=pyddm.Fittable(minval=0.01, maxval=2.0),
+                                        tta_crit=pyddm.Fittable(minval=2.0, maxval=10.0))
+
+        self.model = pyddm.Model(name="Model 4", drift=self.drift,
+                                 noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
                                  overlay=self.overlay, T_dur=self.T_dur)
