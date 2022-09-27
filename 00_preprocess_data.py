@@ -4,7 +4,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 from scipy.signal import savgol_filter
-import random
+import utils
+import ast
 
 
 def merge_csv_files(data_path):
@@ -62,14 +63,16 @@ def get_measures(traj):
 def process_data(data):
     data.loc[:,"t"] = data.t.groupby(data.index.names).transform(lambda t: (t-t.min()))
 
-    data = data.rename(columns={"accl_profile_values": "a_condition"})
+    data = data.rename(columns={"accl_profile_values": "a_values"})
 
-    condition_map = {"[0.0, 0.0, 0.0, 0.0]": "Constant speed",
-                 "[0.0, -4, 4, 0.0]": "Deceleration nudge",
-                 "[0.0, 4, -4, 0.0]": "Acceleration nudge",
-                 "[0.0, -4, -4, 0.0]": "Deceleration",
-                 "[0.0, 4, 4, 0.0]": "Acceleration"}
-    data["nudge_condition"] = data["a_condition"].map(condition_map)
+    condition_map = utils.get_nudge_condition_map()
+    # nudge_conditions = condition_map.values()
+
+    data["a_values"] = data.a_values.apply(ast.literal_eval).apply(tuple)#.apply(str)
+    data["nudge_condition"] = pd.Categorical(data["a_values"].map(condition_map),
+                                             categories=condition_map.values(), ordered=True)
+
+    # data["nudge_condition"] = data["a_values"].map(condition_map)
 
     # we are only interested in left turns
     data = data[data.turn_direction==1]

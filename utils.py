@@ -3,9 +3,7 @@ utils.py
 Static functions for common utilities
 """
 
-import casadi
 import numpy as np
-import pygame
 import os
 import csv
 import pandas as pd
@@ -17,20 +15,6 @@ def get_nudge_condition_map():
             "(0.0, 0.0, 0.0, 0.0)": "Constant speed",
             "(0.0, -4, 4, 0.0)": "Deceleration nudge",
             "(0.0, -4, -4, 0.0)": "Long deceleration"}
-
-
-def coordinate_transform(p, ppm):
-    _, h = pygame.display.get_surface().get_size()
-    return np.array([p[0] * ppm, h - p[1] * ppm])
-
-
-def rotmatrix_casadi(phi):
-    R = casadi.MX(2, 2)
-    R[0, 0] = casadi.cos(phi)
-    R[0, 1] = -casadi.sin(phi)
-    R[1, 0] = casadi.sin(phi)
-    R[1, 1] = casadi.cos(phi)
-    return R
 
 
 def rotmatrix(phi):

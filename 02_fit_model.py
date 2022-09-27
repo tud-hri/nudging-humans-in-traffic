@@ -48,7 +48,7 @@ def fit_model_by_condition(subj_idx=0, loss="vincent"):
     # model = models.ModelAccelerationDependent(
     model = models.ModelAccelerationDependent_v2()
 
-    exp_data = pd.read_csv("../data/measures.csv")
+    exp_data = pd.read_csv("data/measures.csv")
     exp_data = exp_data[exp_data.RT < simulation_params["duration"]]
     exp_data.a_condition = exp_data.a_condition.apply(ast.literal_eval).apply(tuple)
     exp_data[["a_0", "a_1", "a_2", "a_3"]] = pd.DataFrame(exp_data["a_condition"].tolist(), index=exp_data.index)
