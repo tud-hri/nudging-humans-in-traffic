@@ -3,18 +3,22 @@ from scipy import stats
 import pyddm
 from scipy import interpolate
 
-def get_state_interpolators(tta_0, d_0, a_1, a_2):
-    T_dur = 5.0
-    breakpoints = np.array([0., 0.25, 1.25, 2.25] + [T_dur])
+def get_state_interpolators(tta_0, d_0, a_values, a_duration):
+    T_dur = 6.0
+    breakpoints = np.array([0., 0.25, (0.25+a_duration), min(0.25 + a_duration*2, T_dur)] + [T_dur])
 
-    a_values = np.array([0.0, a_1, a_2, 0.0, 0.0])
+    # a_values = np.array([0.0, a_1, a_2, 0.0, 0.0])
 
     v_0 = d_0 / tta_0
-    # a_values = np.concatenate([[0], [a_1, a_2], [0., 0.]])
-    # a_values = np.concatenate([a_values, [0.]])
+    a_values = np.concatenate([a_values, [0.]])
     v_values = np.concatenate([[v_0], v_0 + np.cumsum(np.diff(breakpoints) * a_values[:-1])])
     d_values = np.concatenate([[d_0], d_0 - np.cumsum(np.diff(breakpoints) * (v_values[1:] + v_values[:-1]) / 2)])
+
     tta_values = d_values / v_values
+    # if at some point the oncoming vehicle starts moving away from the intersection, tta goes negative
+    # to avoid this, we create a bound on TTA: if v becomes small enough, TTA = tta_bound
+    v_threshold = 1
+    tta_values[v_values<v_threshold] = d_values[v_values<v_threshold] / v_threshold
 
     # acceleration is piecewise-constant
     f_a = interpolate.interp1d(breakpoints, a_values, kind=0)
@@ -26,8 +30,9 @@ def get_state_interpolators(tta_0, d_0, a_1, a_2):
 
     return f_tta, f_d, f_a
 
-def f_get_env_state(t, conditions):
-    f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_1"], conditions["a_2"])
+def f_get_env_state(t, conditions, a_duration=1):
+    # f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_1"], conditions["a_2"])
+    f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_values"], a_duration)
     tta = f_tta(t)
     d = f_d(t)
     a = f_a(t)
@@ -77,7 +82,7 @@ class DriftTtaDistance(pyddm.models.Drift):
                              - self.theta)
 
 class ModelTtaDistance:
-    T_dur = 5.0
+    T_dur = 6.0
     param_names = ["alpha", "beta_d", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
     def __init__(self):
@@ -106,7 +111,7 @@ class DriftFixedAcceleration(pyddm.models.Drift):
 
 
 class ModelFixedAcceleration:
-    T_dur = 5.0
+    T_dur = 6.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
     def __init__(self):
@@ -140,7 +145,7 @@ class DriftAccelerationDependent(pyddm.models.Drift):
 
 
 class ModelAccelerationDependent:
-    T_dur = 5.0
+    T_dur = 6.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
     def __init__(self):
@@ -174,7 +179,7 @@ class DriftAccelerationDependent_v2(pyddm.models.Drift):
 
 
 class ModelAccelerationDependent_v2:
-    T_dur = 5.0
+    T_dur = 6.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "ndt_location", "ndt_scale"]
 
     def __init__(self):

@@ -10,11 +10,11 @@ import pandas as pd
 import scipy
 
 def get_nudge_condition_map():
-    return {"(0.0, 4, 4, 0.0)": "Long acceleration",
-            "(0.0, 4, -4, 0.0)": "Acceleration nudge",
-            "(0.0, 0.0, 0.0, 0.0)": "Constant speed",
-            "(0.0, -4, 4, 0.0)": "Deceleration nudge",
-            "(0.0, -4, -4, 0.0)": "Long deceleration"}
+    return {(0.0, 4, 4, 0.0): "Long acceleration",
+            (0.0, 4, -4, 0.0): "Acceleration nudge",
+            (0.0, 0.0, 0.0, 0.0): "Constant speed",
+            (0.0, -4, 4, 0.0): "Deceleration nudge",
+            (0.0, -4, -4, 0.0): "Long deceleration"}
 
 
 def rotmatrix(phi):
@@ -51,28 +51,28 @@ def write_to_csv(directory, filename, array, write_mode="a"):
         writer.writerow(array)
 
 
-def get_psf_ci(data):
+def get_psf_ci(data, var="is_go_decision"):
     # psf: psychometric function
     # ci: dataframe with confidence intervals for probability per nudge level
-    nudge_conditions = get_nudge_condition_map().values()
+    conditions = get_nudge_condition_map().values()
 
-    psf = np.array([len(data[data.is_go_decision & (data.nudge_condition == nudge_condition)])
-                    / len(data[data.nudge_condition == nudge_condition])
-                    if len(data[(data.nudge_condition == nudge_condition)]) > 0 else np.NaN
-                    for nudge_condition in nudge_conditions])
+    psf = np.array([len(data[data[var] & (data.condition == condition)])
+                    / len(data[data.condition == condition])
+                    if len(data[(data.condition == condition)]) > 0 else np.NaN
+                    for condition in conditions])
 
-    ci = pd.DataFrame(psf, columns=["p_go"], index=nudge_conditions)
+    ci = pd.DataFrame(psf, columns=["p"], index=conditions)
 
-    n = [len(data[(data.nudge_condition == nudge_condition)]) for nudge_condition in nudge_conditions]
-    ci["ci_l"] = ci["p_go"] - np.sqrt(psf * (1 - psf) / n)
-    ci["ci_r"] = ci["p_go"] + np.sqrt(psf * (1 - psf) / n)
+    n = [len(data[(data.condition == condition)]) for condition in conditions]
+    ci["ci_l"] = ci["p"] - np.sqrt(psf * (1 - psf) / n)
+    ci["ci_r"] = ci["p"] + np.sqrt(psf * (1 - psf) / n)
 
-    return ci.reset_index().rename(columns={"index": "nudge_condition"})
+    return ci.reset_index().rename(columns={"index": "condition"})
 
 
-def get_mean_sem(data, var="RT", groupby_var="nudge_condition", n_cutoff=2):
+def get_mean_sem(data, var="RT", groupby_var="condition", n_cutoff=2):
     mean = data.groupby(groupby_var)[var].mean()
-    sem = data.groupby(groupby_var)[var].apply(lambda x: scipy.stats.sem(x, axis=None, ddof=0))
+    sem = data.groupby(groupby_var)[var].apply(lambda x: scipy.stats.sem(x, axis=None, ddof=0, nan_policy="omit"))
     n = data.groupby(groupby_var).size()
     data_mean_sem = pd.DataFrame({"mean": mean, "sem": sem, "n": n}, index=mean.index)
     data_mean_sem = data_mean_sem[data_mean_sem.n > n_cutoff]

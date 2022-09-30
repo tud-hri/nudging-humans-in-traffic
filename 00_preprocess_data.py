@@ -63,22 +63,13 @@ def get_measures(traj):
 def process_data(data):
     data.loc[:,"t"] = data.t.groupby(data.index.names).transform(lambda t: (t-t.min()))
 
-    data = data.rename(columns={"accl_profile_values": "a_values"})
-
-    condition_map = utils.get_nudge_condition_map()
-    # nudge_conditions = condition_map.values()
-
-    data["a_values"] = data.a_values.apply(ast.literal_eval).apply(tuple)#.apply(str)
-    data["nudge_condition"] = pd.Categorical(data["a_values"].map(condition_map),
-                                             categories=condition_map.values(), ordered=True)
-
-    # data["nudge_condition"] = data["a_values"].map(condition_map)
+    data = data.rename(columns={"tta_condition": "tta_0", "d_condition": "d_0", "accl_profile_values": "a_values"})
 
     # we are only interested in left turns
     data = data[data.turn_direction==1]
 
     # discarding the filler trials
-    data = data[data.d_condition==80]
+    data = data[data.d_0==80]
 
     # only consider the data recorded within 20 meters of each intersection
     data = data[abs(data.ego_distance_to_intersection)<20]
@@ -108,8 +99,12 @@ def process_data(data):
 
     # exclude four participants who have very high (>50%) rate of premature responses in "go" trials
     # and one participant who has very high (>50%) proportion of "stay" trials without pressing the yield button
-    measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
-    data = data.iloc[~data.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
+    # measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
+    # data = data.iloc[~data.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
+
+    # %%
+    # measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([138, 295, 542, 774, 990])]
+    # data = data.iloc[~data.index.get_level_values("subj_id").isin([138, 295, 542, 774, 990])]
 
     # data = data.join(measures)
     measures["is_go_decision"] = measures.min_distance > 5
@@ -125,27 +120,48 @@ def process_data(data):
     print(measures[~measures.is_go_decision & (measures.RT_yield==-1)].groupby(["subj_id"]).size())
 
     # add the condition information to the measures dataframe for further analysis
-    conditions = data.loc[:,["tta_condition", "d_condition", "a_condition", "nudge_condition"]].groupby(data.index.names).first()
+    conditions = data.loc[:,["tta_0", "d_0", "a_values"]].groupby(data.index.names).first()
     measures = measures.join(conditions)
+
+    measures["a_duration"] = 1
+    measures["a_values"] = measures.a_values.apply(ast.literal_eval).apply(tuple)#.apply(str)
 
     # add column "decision" for nicer visualization
     measures["decision"] = "Stay"
     measures.loc[measures.is_go_decision, ["decision"]] = "Go"
-    measures["p_go_decision"] = measures.decision == "Go"
 
     measures["RT"] = measures["RT_gas"]
     measures.loc[~measures.is_go_decision, ["RT"]] = measures.loc[~measures.is_go_decision, ["RT_yield"]].values
+
+    print("Proportion of go trials with premature RT: %.3f" %
+          (len(measures[(measures.RT<=0) & measures.is_go_decision])/len(measures[measures.is_go_decision])))
+
+    print("Proportion of stay trials with missing RT: %.3f" %
+          (len(measures[(measures.RT<=0) & ~measures.is_go_decision])/len(measures[~measures.is_go_decision])))
+
+    measures.loc[measures.RT <= 0, ["RT"]] = np.NaN
+
+    # TODO: swap the decision too, not only RT here? Or don't swap anything?
+    # print("Number of changes-of-mind (stay->go):")
+    # print(measures[measures.is_go_decision & (measures.RT_yield > 0)].groupby("a_values").size())
+    # measures.loc[measures.is_go_decision & (measures.RT_yield > 0), ["RT"]] \
+    #     = measures.loc[measures.is_go_decision & (measures.RT_yield > 0), ["RT_yield"]]
 
     print("Number of trials after exclusions: %i" % len(measures))
 
     return data, measures
 
-data_path = "../data/experiment1-3d"
+data_path = "../data"
 
-# merge_csv_files(data_path=data_path)
+merge_csv_files(data_path=data_path)
+
+print("Merging finalized, preprocessing started...")
+
 raw_data = pd.read_csv(os.path.join(data_path, "raw_data_merged.csv"), sep="\t",
                        index_col=["subj_id", "session", "route", "intersection_no"])
 processed_data, measures = process_data(raw_data)
+
+print("Preprocessing finalized, writing data to csv...")
 
 measures.to_csv(os.path.join(data_path, "measures.csv"), index=True)
 processed_data.to_csv(os.path.join(data_path, "processed_data.csv"), index=True)
