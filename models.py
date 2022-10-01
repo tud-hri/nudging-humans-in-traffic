@@ -135,12 +135,12 @@ class ModelFixedAcceleration:
 class DriftAccelerationDependent(pyddm.models.Drift):
     name = "Drift depends on tta(t), d(t), and a(t)"
     required_parameters = ["alpha", "beta_d", "beta_a", "theta"]#, "f_get_env_state"]
-    required_conditions = ["tta_0", "d_0", "a_values"]
+    required_conditions = ["tta_0", "d_0", "a_values", "a_duration"]
     # coefficient in front of tta is always 1.0
     beta_tta = 1.0
 
     def get_drift(self, t, conditions, **kwargs):
-        tta, d, a = f_get_env_state(t, conditions)
+        tta, d, a = f_get_env_state(t, conditions, conditions["a_duration"])
         return self.alpha * (self.beta_tta * tta + self.beta_d * d - self.beta_a*a - self.theta)
 
 

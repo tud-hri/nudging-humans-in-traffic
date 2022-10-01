@@ -30,6 +30,11 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
     exp_data.a_values = exp_data.a_values.apply(ast.literal_eval).apply(tuple)
     # exp_data[["a_0", "a_1", "a_2", "a_3"]] = pd.DataFrame(exp_data["a_condition"].tolist(), index=exp_data.index)
 
+    # training on a subset of data
+    exp_data = exp_data[(exp_data.a_values == (0.0, 4, 4, 0.0))
+                        | (exp_data.a_values == (0.0, 0.0, 0.0, 0.0))
+                        | (exp_data.a_values == (0.0, -4, -4, 0.0))]
+
     subjects = exp_data.subj_id.unique()
 
     if subj_idx == "all":
@@ -41,7 +46,7 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
         subj_data = exp_data[(exp_data.subj_id == subj_id)]
         loss = loss_functions.LossWLS
 
-    output_directory = "fit_results/model_acceleration_dependent"
+    output_directory = "modeling/fit_results/model_acceleration_dependent"
 
     file_name = "subj_%s_parameters_fitted.csv" % (str(subj_id))
     if not os.path.isfile(os.path.join(output_directory, file_name)):
