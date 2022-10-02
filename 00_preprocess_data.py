@@ -151,7 +151,7 @@ def process_data(data):
 
     return data, measures
 
-data_path = "../data"
+data_path = "data"
 
 merge_csv_files(data_path=data_path)
 
