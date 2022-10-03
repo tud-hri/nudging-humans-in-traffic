@@ -1,14 +1,17 @@
 \begin{table}[h]
 \centering
-\caption{Coefficients of the logistic regression describing the final decision}
+\caption{Coefficients of the mixed-effects logistic regression describing the final decision as a function of $\textrm{TTA}_0$ and condition (with Constant speed as the reference category). Participant ID was included as a random intercept.}
 \label{tab:decision}
-\begin{tabular}{rrrrrr}
+\begin{tabular}{rrrrr}
 \toprule
- & $b$ & CI 2.5\% & CI 97.5\% & $z$ & $p$ \\
+ & $b$ & SE & $z$ & $p$ \\
 \midrule
-(Intercept) & -10.84 & -12.27 & -9.41 & -14.88 & 0.00 \\
-$\textrm{TTA}_0$ & 1.85 & 1.63 & 2.07 & 16.45 & 0.00 \\
-condition & 0.51 & 0.43 & 0.58 & 13.18 & 0.00 \\
+(Intercept) & -9.37 & 0.71 & -13.23 & $<0.001$ \\
+$\textrm{TTA}_0$ & 1.83 & 0.10 & 17.89 & $<0.001$ \\
+Long acceleration & -0.77 & 0.15 & -5.29 & $<0.001$ \\
+Acceleration nudge & -0.11 & 0.14 & -0.79 & 0.43 \\
+Deceleration nudge & 0.50 & 0.14 & 3.51 & $<0.001$ \\
+Long deceleration & 1.48 & 0.15 & 9.85 & $<0.001$ \\
 \bottomrule
 \end{tabular}
 \end{table}

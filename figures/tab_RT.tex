@@ -1,17 +1,18 @@
 \begin{table}[h]
 \centering
-\caption{Coefficients of the multilevel linear regression describing the response time}
+\caption{ANOVA table based on the mixed-effects linear regression describing response time as a function of decision, $\textrm{TTA}_0$, and condition.}
 \label{tab:RT}
-\begin{tabular}{rrrrrr}
+\begin{tabular}{rrrrrrr}
 \toprule
- & $b$ & CI 2.5\% & CI 97.5\% & $t$ & $p$ \\
+ & SS & MS & df & $F$ & $p$ \\
 \midrule
-(Intercept) & -0.77 & -1.22 & -0.32 & -3.35 & 0.00 \\
-decisionStay & 1.54 & 1.01 & 2.07 & 5.74 & 0.00 \\
-$\textrm{TTA}_0$ & 0.23 & 0.15 & 0.31 & 5.53 & 0.00 \\
-condition & 0.11 & 0.09 & 0.14 & 8.36 & 0.00 \\
-decision Stay:$\textrm{TTA}_0$ & -0.09 & -0.19 & 0.01 & -1.80 & 0.07 \\
-decision Stay:condition & -0.06 & -0.09 & -0.02 & -3.18 & 0.00 \\
+decision & 6.70 & 6.70 & 1 & 20.09 & $<0.001$ \\
+$\textrm{TTA}_0$ & 10.99 & 10.99 & 1 & 32.95 & $<0.001$ \\
+condition & 3.00 & 0.75 & 4 & 2.25 & 0.06 \\
+decision:$\textrm{TTA}_0$ & 0.00 & 0.00 & 1 & 0.00 & 0.99 \\
+decision:condition & 9.88 & 2.47 & 4 & 7.41 & $<0.001$ \\
+condition:$\textrm{TTA}_0$ & 4.67 & 1.17 & 4 & 3.50 & 0.01 \\
+decision:condition:$\textrm{TTA}_0$ & 9.94 & 2.49 & 4 & 7.46 & $<0.001$ \\
 \bottomrule
 \end{tabular}
 \end{table}
