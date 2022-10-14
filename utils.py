@@ -16,16 +16,10 @@ def get_nudge_condition_map():
             (0.0, -4, 4, 0.0): "Deceleration nudge",
             (0.0, -4, -4, 0.0): "Long deceleration"}
 
-
-def rotmatrix(phi):
-    return np.array([[np.cos(phi), -np.sin(phi)], [np.sin(phi), np.cos(phi)]])
-
-
 def get_derivative(t, x):
     # To be able to reasonably calculate derivatives at the end-points of the trajectories,
     # append three extra points before and after the actual trajectory, so we get N+6
     # points instead of N
-    # TODO: make a linear extrapolation instead of constant
     x = np.append(x[0] * np.ones(3), np.append(x, x[-1] * np.ones(3)))
 
     # Time vector is also artificially extended by equally spaced points

@@ -18,24 +18,14 @@ def fit_model(model, training_data, loss_function):
 
 
 def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
-    # model = models.ModelTtaDistance()
-    # model = models.ModelFixedAcceleration()
     model = models.ModelAccelerationDependent()
-    # model = models.ModelAccelerationDependent_v2()
 
     exp_data = pd.read_csv("data/measures.csv")
-
-    # exclude four participants who have very high (>50%) rate of premature responses in "go" trials
-    # and one participant who has very high (>50%) proportion of "stay" trials without pressing the yield button
-    # and then replaces all remaining missing RTs (12% go, 4% stay) with 0, so skews the RT estimates towards 0, but retains p(go)
-    # exp_data = exp_data[~exp_data.subj_id.isin([542, 543, 746, 774])]
-    # exp_data["RT"] = exp_data["RT"].fillna(0)
 
     # This excludes very few trials with long RTs, but also excludes about 800 (21%) trials with missing RTs (unless they are replaced by 0 already)
     exp_data = exp_data[(exp_data.RT < T_dur)]
 
     exp_data.a_values = exp_data.a_values.apply(ast.literal_eval).apply(tuple)
-    # exp_data[["a_0", "a_1", "a_2", "a_3"]] = pd.DataFrame(exp_data["a_condition"].tolist(), index=exp_data.index)
 
     # training on a subset of data
     exp_data = exp_data[(exp_data.a_values == (0.0, 4, 4, 0.0))
@@ -56,7 +46,7 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
     training_data = subj_data
     print("len(training_data): " + str(len(training_data)))
 
-    output_directory = "modeling/fit_results_replaced_nan_rt/model_acceleration_dependent_cross_validation"
+    output_directory = "modeling/fit_results_excluded_nan_rt/model_acceleration_dependent_cross_validation"
 
     file_name = "subj_%s_parameters_fitted.csv" % (str(subj_id))
     if not os.path.isfile(os.path.join(output_directory, file_name)):
@@ -71,5 +61,4 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
 
     return fitted_model
 
-# print(pd.read_csv("../data/measures.csv"))
 fitted_model = fit_model_by_condition(subj_idx="all", loss="robustBIC", T_dur=6)

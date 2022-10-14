@@ -14,7 +14,6 @@ class LossWLS(pyddm.LossFunction):
         self.T_dur = T_dur
 
     def get_rt_quantiles(self, cdf, t_domain, exp=False, correct=True):
-        # print(cdf)
         cdf_interp = interpolate.interp1d(t_domain, cdf / cdf[-1])
 
         # If the model produces very fast RTs, interpolated cdf(0) can be >0.1, then we cannot find root like usual
@@ -29,7 +28,6 @@ class LossWLS(pyddm.LossFunction):
         WLS = 0
         for condition in self.sample.condition_combinations(required_conditions=self.required_conditions):
             c = frozenset(condition.items())
-            #            print(c)
             condition_data = self.sample.subset(**condition)
             WLS += 4 * (solutions[c].prob_correct() - condition_data.prob_correct()) ** 2
 
