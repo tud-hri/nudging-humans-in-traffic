@@ -1,10 +1,7 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
 from scipy.signal import savgol_filter
-import utils
 import ast
 
 
@@ -26,8 +23,6 @@ def get_measures(traj):
         # the bot started moving when the truck moved far enough not to block the participants" line of sight to the bot
         # so we can count on the first moment the bot velocity is non-zero as the moment the bot became visible first
         # this is what we take as the decision start time
-        # idx_truck_moving = traj.truck_v.to_numpy().nonzero()[0][0]
-        # idx_bot_visible = idx_bot_moving + np.argmax(traj.bot_angle[idx_bot_moving:] - traj.truck_angle[idx_bot_moving:] < 0)
         idx_bot_visible = traj.bot_v.to_numpy().nonzero()[0][0]
         throttle = traj.iloc[idx_bot_visible:, traj.columns.get_loc("throttle")]
         idx_gas_response = idx_bot_visible + (throttle > 0).to_numpy().nonzero()[0][0]
@@ -97,15 +92,6 @@ def process_data(data):
     measures = data.groupby(data.index.names).apply(get_measures)
     print("Number of trials before exclusions: %i" % len(measures))
 
-    # exclude four participants who have very high (>50%) rate of premature responses in "go" trials
-    # and one participant who has very high (>50%) proportion of "stay" trials without pressing the yield button
-    # measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
-    # data = data.iloc[~data.index.get_level_values("subj_id").isin([542, 543, 746, 774])]
-
-    # %%
-    # measures = measures.iloc[~measures.index.get_level_values("subj_id").isin([138, 295, 542, 774, 990])]
-    # data = data.iloc[~data.index.get_level_values("subj_id").isin([138, 295, 542, 774, 990])]
-
     # data = data.join(measures)
     measures["is_go_decision"] = measures.min_distance > 5
 
@@ -113,9 +99,6 @@ def process_data(data):
     print("Number of go trials without a throttle press or bot not moving: %i" % (len(measures[measures.is_go_decision & (measures.RT_gas==-1)])))
 
     # RT_yield is -1 if the yield button wasn't pressed in a stay decision
-    # Two possible reasons
-    # 1) the participant just forgot to press the yield button;
-    # 2) this is in fact a go decision just with a very small distance between the cars;
     print("Number of stay trials without a yield button press: %i" % (len(measures[~measures.is_go_decision & (measures.RT_yield==-1)])))
     print(measures[~measures.is_go_decision & (measures.RT_yield==-1)].groupby(["subj_id"]).size())
 
@@ -140,12 +123,6 @@ def process_data(data):
           (len(measures[(measures.RT<=0) & ~measures.is_go_decision])/len(measures[~measures.is_go_decision])))
 
     measures.loc[measures.RT <= 0, ["RT"]] = np.NaN
-
-    # TODO: swap the decision too, not only RT here? Or don't swap anything?
-    # print("Number of changes-of-mind (stay->go):")
-    # print(measures[measures.is_go_decision & (measures.RT_yield > 0)].groupby("a_values").size())
-    # measures.loc[measures.is_go_decision & (measures.RT_yield > 0), ["RT"]] \
-    #     = measures.loc[measures.is_go_decision & (measures.RT_yield > 0), ["RT_yield"]]
 
     print("Number of trials after exclusions: %i" % len(measures))
 

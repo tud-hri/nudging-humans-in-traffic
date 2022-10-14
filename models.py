@@ -30,7 +30,7 @@ def get_state_interpolators(tta_0, d_0, a_values, a_duration):
 
     return f_tta, f_d, f_a
 
-def f_get_env_state(t, conditions, a_duration=1):
+def f_get_env_state(t, conditions, a_duration):
     # f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_1"], conditions["a_2"])
     f_tta, f_d, f_a = get_state_interpolators(conditions["tta_0"], conditions["d_0"], conditions["a_values"], a_duration)
     tta = f_tta(t)

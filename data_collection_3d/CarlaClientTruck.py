@@ -4,11 +4,17 @@ import sys
 
 from exp_info_ui import ExpInfoUI
 
-try:
-    sys.path.append(glob.glob('C:\carla-v0.9.9\PythonAPI\carla\dist\carla-0.9.9-py3.8-win-amd64.egg')[0])
-    import carla
-except BaseException:
-    pass
+import carla
+
+# try:
+#     sys.path.append(glob.glob('C:\carla\carla\PythonAPI\carla\dist\carla-0.9.13-py3.8-win-amd64.egg')[0])
+#
+#     import carla
+# except BaseException:
+#     pass
+
+
+import carla
 
 import pygame
 import math
@@ -51,7 +57,7 @@ class LTAPCarlaClient():
 
             # self.tta_conditions = [4, 5, 6]
             # self.tta_conditions = [4.5, 5.5]
-            self.tta_conditions = [4, 5]
+            self.tta_conditions = [4.5, 5.5]
             # self.bot_distance_values = [90, 120, 150]
             self.bot_distance_values = [80]
             self.accl_conditions = [[0.0, 0.0, 0.0, 0.0],
@@ -191,10 +197,10 @@ class LTAPCarlaClient():
         if speed > 20:
             throttleCmd = 0
 
-        # brakeCmd = 1.6 + (2.05 * math.log10(
-        #     -0.7 * self.joystick.get_axis(2) + 1.4) - 1.2) / 0.92
+
         brakeCmd = 1.6 + (2.05 * math.log10(
             -1 * self.joystick.get_axis(2) + 1.4) - 1.2) / 0.92
+
         if brakeCmd <= 0:
             brakeCmd = 0
         elif brakeCmd > 1:
@@ -265,8 +271,10 @@ class LTAPCarlaClient():
         # for items in vehicle_bp_library:
         #     print(items.id[8:])
 
+        print(self.world.get_blueprint_library())
         # ego_bp = random.choice(self.world.get_blueprint_library().filter('vehicle.tesla.model3'))
-        ego_bp = random.choice(self.world.get_blueprint_library().filter('vehicle.hapticslab.audi'))
+        # ego_bp = random.choice(self.world.get_blueprint_library().filter('vehicle.tesla.model3'))
+        ego_bp = random.choice(self.world.get_blueprint_library().filter('vehicle.hapticslab.epicaudi'))
 
         self.ego_actor = self.world.spawn_actor(ego_bp, self.ego_start_position.transform)
         self.ego_actor.set_autopilot(False)
@@ -292,7 +300,8 @@ class LTAPCarlaClient():
         self.bot_direction = np.around(self.rotate(ego_direction, np.pi))  # The direction of bot velocity
         self.last_bot_spawn_time = time.time()
 
-        self.bot_actor.set_velocity(carla.Vector3D(self.bot_velocity[0], -self.bot_velocity[1], 0))
+        # self.bot_actor.set_velocity(carla.Vector3D(self.bot_velocity[0], -self.bot_velocity[1], 0)) # Older Version of Carla
+        self.bot_actor.set_target_velocity(carla.Vector3D(self.bot_velocity[0], -self.bot_velocity[1], 0))
 
     def spawn_truck(self, distance_to_intersection, speed):
         truck_bp = random.choice(self.world.get_blueprint_library().filter('vehicle.carlamotors.carlacola'))
@@ -311,7 +320,9 @@ class LTAPCarlaClient():
 
         self.truck_direction = np.around(self.rotate(ego_direction, 0))  # The direction of truck velocity
 
-        self.truck_actor.set_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0))
+        # self.truck_actor.set_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0)) #Older version of Carla
+        self.truck_actor.set_target_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0))
+
 
         print('Truck Spawned !', 'Ego Direction :', ego_direction)
 
@@ -325,7 +336,9 @@ class LTAPCarlaClient():
         # print('Truxk Speed Update: ',truck_speed,' Bot Direction: ',self.truck_direction)
         self.truck_velocity = truck_speed * self.truck_direction
         # print(self.truck_velocity)
-        self.truck_actor.set_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0))
+        # self.truck_actor.set_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0)) # Older version of Carla
+        self.truck_actor.set_target_velocity(carla.Vector3D(self.truck_velocity[0], -self.truck_velocity[1], 0))
+
 
     # Older update_bot_control for constant velocity
     #    def update_bot_control(self, max_speed):
@@ -351,7 +364,9 @@ class LTAPCarlaClient():
             speed_dynamic = 0
 
         bot_velocity_dynamic = speed_dynamic * self.bot_direction
-        self.bot_actor.set_velocity(carla.Vector3D(bot_velocity_dynamic[0], -bot_velocity_dynamic[1], 0))
+        # self.bot_actor.set_velocity(carla.Vector3D(bot_velocity_dynamic[0], -bot_velocity_dynamic[1], 0)) #Older version of Carla
+        self.bot_actor.set_target_velocity(carla.Vector3D(bot_velocity_dynamic[0], -bot_velocity_dynamic[1], 0))
+
 
     def calculate_bot_start_speed(self, distance, tta, acc, acc_t):
 

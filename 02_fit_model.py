@@ -28,8 +28,8 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
     # exclude four participants who have very high (>50%) rate of premature responses in "go" trials
     # and one participant who has very high (>50%) proportion of "stay" trials without pressing the yield button
     # and then replaces all remaining missing RTs (12% go, 4% stay) with 0, so skews the RT estimates towards 0, but retains p(go)
-    exp_data = exp_data[~exp_data.subj_id.isin([542, 543, 746, 774])]
-    exp_data["RT"] = exp_data["RT"].fillna(0)
+    # exp_data = exp_data[~exp_data.subj_id.isin([542, 543, 746, 774])]
+    # exp_data["RT"] = exp_data["RT"].fillna(0)
 
     # This excludes very few trials with long RTs, but also excludes about 800 (21%) trials with missing RTs (unless they are replaced by 0 already)
     exp_data = exp_data[(exp_data.RT < T_dur)]
@@ -53,6 +53,9 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
         subj_data = exp_data[(exp_data.subj_id == subj_id)]
         loss = loss_functions.LossWLS
 
+    training_data = subj_data
+    print("len(training_data): " + str(len(training_data)))
+
     output_directory = "modeling/fit_results_replaced_nan_rt/model_acceleration_dependent_cross_validation"
 
     file_name = "subj_%s_parameters_fitted.csv" % (str(subj_id))
@@ -60,9 +63,6 @@ def fit_model_by_condition(subj_idx=0, loss="vincent", T_dur=6):
         utils.write_to_csv(output_directory, file_name, ["subj_id", "loss"] + model.param_names, write_mode="w")
 
     print(subj_id)
-
-    training_data = subj_data
-    print("len(training_data): " + str(len(training_data)))
 
     fitted_model = fit_model(model.model, training_data, loss)
     utils.write_to_csv(output_directory, file_name,
