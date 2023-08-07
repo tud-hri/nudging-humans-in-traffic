@@ -136,9 +136,9 @@ print("Merging finalized, preprocessing started...")
 
 raw_data = pd.read_csv(os.path.join(data_path, "raw_data_merged.csv"), sep="\t",
                        index_col=["subj_id", "session", "route", "intersection_no"])
-processed_data, measures = process_data(raw_data)
+# processed_data, measures = process_data(raw_data)
 
 print("Preprocessing finalized, writing data to csv...")
 
-measures.to_csv(os.path.join(data_path, "measures.csv"), index=True)
-processed_data.to_csv(os.path.join(data_path, "processed_data.csv"), index=True)
+# measures.to_csv(os.path.join(data_path, "measures.csv"), index=True)
+# processed_data.to_csv(os.path.join(data_path, "processed_data.csv"), index=True)

@@ -96,7 +96,7 @@ class ModelAccelerationDependent:
                                             # f_get_env_state=f_get_env_state)
 
         self.bound = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
-                                        k=pyddm.Fittable(minval=0.01, maxval=2.0),
+                                        k=pyddm.Fittable(minval=0.001, maxval=2.0),
                                         tta_crit=pyddm.Fittable(minval=2.0, maxval=10.0))
 
         self.model = pyddm.Model(name="Model 3", drift=self.drift,
