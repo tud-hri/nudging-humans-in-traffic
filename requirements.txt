@@ -1,6 +1,7 @@
 pygame
-numpy
+numpy~=1.23.3
 jupyter
-pandas
+pandas~=1.5.0
 seaborn
-pyddm
+pyddm~=0.6.1
+scipy~=1.8.0
