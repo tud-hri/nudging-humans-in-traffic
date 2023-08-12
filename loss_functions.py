@@ -29,32 +29,32 @@ class LossWLS(pyddm.LossFunction):
         for condition in self.sample.condition_combinations(required_conditions=self.required_conditions):
             c = frozenset(condition.items())
             condition_data = self.sample.subset(**condition)
-            WLS += 4 * (solutions[c].prob_correct() - condition_data.prob_correct()) ** 2
+            WLS += 4 * (solutions[c].prob("Go") - condition_data.prob("Go")) ** 2
 
             # These are needed for vincentized distributions
             # TODO: fix this so that this logic is a part of the child class
-            [self.condition_rts_correct, self.condition_rts_error] = \
-                [pd.DataFrame([[item[0], item[1]["subj_id"]] for item in condition_data.items(correct=correct)],
-                              columns=["RT", "subj_id"]) for correct in [True, False]]
+            [self.condition_rts_go, self.condition_rts_stay] = \
+                [pd.DataFrame([[item[0], item[1]["subj_id"]] for item in condition_data.items(choice=choice)],
+                              columns=["RT", "subj_id"]) for choice in ["Go", "Stay"]]
 
             # Sometimes model p_correct is very close to 0, then RT distribution is weird, in this case ignore RT mismatch
-            if ((solutions[c].prob_correct() > 0.001) & (condition_data.prob_correct() > 0)):
-                model_rt_q_corr = self.get_rt_quantiles(solutions[c].cdf_corr(), model.t_domain(), exp=False,
+            if ((solutions[c].prob("Go") > 0.001) & (condition_data.prob("Go") > 0)):
+                model_rt_q_corr = self.get_rt_quantiles(solutions[c].cdf("Go"), model.t_domain(), exp=False,
                                                         correct=True)
                 # for vincentized loss, these calls to self.get_rt_quantiles for exp=True are redirected to the child class
-                exp_rt_q_corr = self.get_rt_quantiles(condition_data.cdf_corr(T_dur=self.T_dur, dt=self.dt),
+                exp_rt_q_corr = self.get_rt_quantiles(condition_data.cdf(choice="Go", T_dur=self.T_dur, dt=self.dt),
                                                       model.t_domain(), exp=True, correct=True)
 
-                WLS += np.dot((model_rt_q_corr - exp_rt_q_corr) ** 2, self.rt_q_weights) * condition_data.prob_correct()
+                WLS += np.dot((model_rt_q_corr - exp_rt_q_corr) ** 2, self.rt_q_weights) * condition_data.prob("Go")
 
-            if ((solutions[c].prob_error() > 0.001) & (condition_data.prob_error() > 0)):
-                model_rt_q_error = self.get_rt_quantiles(solutions[c].cdf_err(), model.t_domain(), exp=False,
+            if ((solutions[c].prob("Stay") > 0.001) & (condition_data.prob("Stay") > 0)):
+                model_rt_q_error = self.get_rt_quantiles(solutions[c].cdf("Stay"), model.t_domain(), exp=False,
                                                          correct=False)
 
-                exp_rt_q_error = self.get_rt_quantiles(condition_data.cdf_err(T_dur=self.T_dur, dt=self.dt),
+                exp_rt_q_error = self.get_rt_quantiles(condition_data.cdf(choice="Stay", T_dur=self.T_dur, dt=self.dt),
                                                        model.t_domain(), exp=True, correct=False)
 
-                WLS += np.dot((model_rt_q_error - exp_rt_q_error) ** 2, self.rt_q_weights) * condition_data.prob_error()
+                WLS += np.dot((model_rt_q_error - exp_rt_q_error) ** 2, self.rt_q_weights) * condition_data.prob("Stay")
         return WLS
 
 
@@ -65,7 +65,7 @@ class LossWLSVincent(LossWLS):
     def get_rt_quantiles(self, cdf, t_domain, exp=False, correct=True):
         # hack: for vincentized loss, cdf is not even used, we use self.condition_rts then
         if exp:
-            condition_rts = self.condition_rts_correct if correct else self.condition_rts_error
+            condition_rts = self.condition_rts_go if correct else self.condition_rts_stay
 
             vincentized_quantiles = (condition_rts.groupby("subj_id")
                                      .apply(lambda group: np.quantile(a=group.RT, q=self.rt_quantiles))).mean()

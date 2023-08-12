@@ -43,8 +43,8 @@ class OverlayNonDecisionGaussian(pyddm.Overlay):
 
     def apply(self, solution):
         # Extract components of the solution object for convenience
-        corr = solution.corr
-        err = solution.err
+        corr = solution.choice_upper
+        err = solution.choice_lower
         dt = solution.model.dt
         # Create the weights for different timepoints
         times = np.asarray(list(range(-len(corr), len(corr)))) * dt
@@ -63,18 +63,34 @@ class BoundCollapsingTta(pyddm.models.Bound):
     required_conditions = ["tta_0", "d_0"]
 
     def get_bound(self, t, conditions, **kwargs):
-        tta = conditions["tta_0"] - t
+        tta, d, a = f_get_env_state(t, conditions, conditions["a_duration"])
+        # tta = conditions["tta_0"] - t
         return self.b_0 / (1 + np.exp(-self.k * (tta - self.tta_crit)))
 
+class BoundCollapsingGeneralizedGap(pyddm.models.Bound):
+    name = "Bounds dynamically collapsing with the generalized gap"
+    required_parameters = ["b_0", "k", "alpha", "beta_d", "beta_a", "theta"]
+    required_conditions = ["tta_0", "d_0"]
+    beta_tta = 1.0
+
+    def get_bound(self, t, conditions, **kwargs):
+        tta, d, a = f_get_env_state(t, conditions, conditions["a_duration"])
+        # tta = conditions["tta_0"] - t
+        return self.b_0 / (1 + np.exp(-self.k * (self.beta_tta * tta + self.beta_d * d - self.beta_a*a - self.theta)))
 
 class DriftAccelerationDependent(pyddm.models.Drift):
     # TODO: model fitting could potentially be sped up if the interpolators are passed to the Drift object
-    #  by pyddm as parameters instead of being created from scratch every time the drift needs to be calculated
+    #  by pyddm as parameters instead of being created from scratch every time the drift needs to be calculated,
+    #  however, this doesn't work so far
     name = "Drift depends on tta(t), d(t), and a(t)"
     required_parameters = ["alpha", "beta_d", "beta_a", "theta"]#, "f_get_env_state"]
     required_conditions = ["tta_0", "d_0", "a_values", "a_duration"]
     # coefficient in front of tta is always 1.0
     beta_tta = 1.0
+
+    # def __init__(self, state_interpolators, **kwargs):
+    #     self.interpolators = state_interpolators
+    #     super().__init__(**kwargs)
 
     def get_drift(self, t, conditions, **kwargs):
         tta, d, a = f_get_env_state(t, conditions, conditions["a_duration"])
@@ -99,6 +115,64 @@ class ModelAccelerationDependent:
                                         k=pyddm.Fittable(minval=0.001, maxval=2.0),
                                         tta_crit=pyddm.Fittable(minval=2.0, maxval=10.0))
 
-        self.model = pyddm.Model(name="Model 3", drift=self.drift,
+        self.model = pyddm.Model(name="Model 1", choice_names=('Go', 'Stay'), drift=self.drift,
                                  noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
                                  overlay=self.overlay, T_dur=self.T_dur)
+
+
+class ModelAccelerationDependentWithBias:
+    T_dur = 6.0
+    param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "tta_crit", "x0", "ndt_location", "ndt_scale"]
+
+    def __init__(self):
+        self.overlay = OverlayNonDecisionGaussian(ndt_location=pyddm.Fittable(minval=0, maxval=2.0),
+                                                  ndt_scale=pyddm.Fittable(minval=0.001, maxval=0.5))
+
+        self.drift = DriftAccelerationDependent(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
+                                            beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
+                                            beta_a=pyddm.Fittable(minval=0.0, maxval=10.0),
+                                            theta=pyddm.Fittable(minval=0, maxval=20))#,
+                                            # f_get_env_state=f_get_env_state)
+
+        self.bound = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
+                                        k=pyddm.Fittable(minval=0.001, maxval=2.0),
+                                        tta_crit=pyddm.Fittable(minval=2.0, maxval=10.0))
+
+        self.IC = pyddm.ICPointRatio(x0=pyddm.Fittable(minval=-1.0, maxval=1.0))
+
+        self.model = pyddm.Model(name="Model 2", choice_names=("Go", "Stay"),
+                                 drift=self.drift,
+                                 noise=pyddm.NoiseConstant(noise=1),
+                                 bound=self.bound,
+                                 overlay=self.overlay,
+                                 IC=self.IC,
+                                 T_dur=self.T_dur)
+
+class ModelGeneralizedGapWithBias:
+    T_dur = 6.0
+    param_names = ["alpha", "beta_d", "beta_a", "theta", "b_0", "k", "x0", "ndt_location", "ndt_scale"]
+
+    def __init__(self):
+        alpha = pyddm.Fittable(minval=0.0, maxval=5.0)
+        beta_d = pyddm.Fittable(minval=0.0, maxval=1.0)
+        beta_a = pyddm.Fittable(minval=0.0, maxval=10.0)
+        theta = pyddm.Fittable(minval=0, maxval=20)
+
+        self.overlay = OverlayNonDecisionGaussian(ndt_location=pyddm.Fittable(minval=0, maxval=2.0),
+                                                  ndt_scale=pyddm.Fittable(minval=0.001, maxval=0.5))
+
+        self.drift = DriftAccelerationDependent(alpha=alpha, beta_d=beta_d, beta_a=beta_a, theta=theta)
+
+        self.bound = BoundCollapsingGeneralizedGap(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
+                                                    k=pyddm.Fittable(minval=0.001, maxval=2.0),
+                                                   alpha=alpha, beta_d=beta_d, beta_a=beta_a, theta=theta)
+
+        self.IC = pyddm.ICPointRatio(x0=pyddm.Fittable(minval=-1.0, maxval=1.0))
+
+        self.model = pyddm.Model(name="Model 3", choice_names=("Go", "Stay"),
+                                 drift=self.drift,
+                                 noise=pyddm.NoiseConstant(noise=1),
+                                 bound=self.bound,
+                                 overlay=self.overlay,
+                                 IC=self.IC,
+                                 T_dur=self.T_dur)
