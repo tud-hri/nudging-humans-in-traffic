@@ -17,12 +17,28 @@ def fit_model(model, training_data, loss_function):
 
 
 def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6):
+    conditions = [{"tta_0": tta_0, "d_0": d_0, "a_values": a_values, "a_duration": a_duration}
+                  for tta_0 in [4.5, 5.5]
+                  for d_0 in [80.0]
+                  for a_values in [(0., 0., 0., 0.),
+                                   (0., 4, 4, 0.),
+                                   (0., 4, -4, 0.),
+                                   (0., -4, 4, 0.),
+                                   (0., -4, -4, 0.)]
+                  for a_duration in [1.0]]
+    # this dictionary contains f_d, f_tta, f_a for each condition; a string representation of a condition is the key and three functions are the values
+    state_interpolators = utils.get_state_interpolators(conditions=conditions)
+
     if model_no == 1:
         model = models.ModelAccelerationDependent()
     elif model_no == 2:
-        model = models.ModelAccelerationDependentWithBias()
+        model = models.ModelAccelerationDependentWithBias(state_interpolators)
     elif model_no == 3:
         model = models.ModelGeneralizedGapWithBias()
+    elif model_no == 4:
+        model = models.ModelAccelerationIndependentConstantBounds(state_interpolators)
+    elif model_no == 5:
+        model = models.ModelAccelerationDependentConstantBounds(state_interpolators)
     else:
         raise Exception("Model number not recognized")
 
@@ -77,6 +93,4 @@ def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6)
 
     return fitted_model
 
-# fitted_model = fit_model_by_condition(model_no=1, subj_idx="all", loss_name="bic", T_dur=6)
-# fitted_model = fit_model_by_condition(model_no=2, subj_idx="all", loss_name="bic", T_dur=6)
-fitted_model = fit_model_by_condition(model_no=3, subj_idx="all", loss_name="bic", T_dur=6)
+fitted_model = fit_model_by_condition(model_no=5, subj_idx="all", loss_name="bic", T_dur=6)
