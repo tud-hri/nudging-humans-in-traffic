@@ -93,4 +93,5 @@ def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6)
 
     return fitted_model
 
-fitted_model = fit_model_by_condition(model_no=5, subj_idx="all", loss_name="bic", T_dur=6)
+# fitted_model = fit_model_by_condition(model_no=2, subj_idx="all", loss_name="wls", T_dur=6)
+fitted_model = fit_model_by_condition(model_no=4, subj_idx="all", loss_name="vincent", T_dur=6)

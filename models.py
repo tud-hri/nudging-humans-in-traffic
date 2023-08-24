@@ -165,6 +165,8 @@ class ModelAccelerationIndependentConstantBounds:
                                  drift=self.drift, noise=pyddm.NoiseConstant(noise=1), bound=self.bound,
                                  overlay=self.overlay, IC=self.IC, T_dur=self.T_dur)
 
+# This model for some reason gives weird results - takes forever to fit, has initial bias close to -1 and gives p_go > 1
+# TODO: debug it
 class ModelAccelerationDependentConstantBounds:
     T_dur = 6.0
     param_names = ["alpha", "beta_d", "beta_a", "theta", "B", "x0", "ndt_location", "ndt_scale"]
