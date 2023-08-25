@@ -36,6 +36,8 @@ def get_measures(traj):
         min_distance = -1
         RT_gas = -1
 
+    gap_to_truck = np.sqrt((traj.ego_x - traj.truck_x)**2 + (traj.ego_y - traj.truck_y)**2).min()
+
     let_pass = traj.iloc[idx_bot_visible:, traj.columns.get_loc("let_pass")]
     if sum(let_pass)>0:
         idx_yield = idx_bot_visible + (let_pass > 0).to_numpy().nonzero()[0][0]
@@ -51,6 +53,7 @@ def get_measures(traj):
                       "idx_yield": idx_yield,
                       "idx_min_distance": idx_min_distance,
                       "min_distance": min_distance,
+                      "gap_to_truck": gap_to_truck,
                       "RT_gas": RT_gas,
                       "RT_yield": RT_yield,
                       "is_negative_rating": is_negative_rating})
