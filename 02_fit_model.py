@@ -16,37 +16,11 @@ def fit_model(model, training_data, loss_function):
     return fitted_model
 
 
-def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6):
-    conditions = [{"tta_0": tta_0, "d_0": d_0, "a_values": a_values, "a_duration": a_duration}
-                  for tta_0 in [4.5, 5.5]
-                  for d_0 in [80.0]
-                  for a_values in [(0., 0., 0., 0.),
-                                   (0., 4, 4, 0.),
-                                   (0., 4, -4, 0.),
-                                   (0., -4, 4, 0.),
-                                   (0., -4, -4, 0.)]
-                  for a_duration in [1.0]]
-    # this dictionary contains f_d, f_tta, f_a for each condition; a string representation of a condition is the key and three functions are the values
-    state_interpolators = utils.get_state_interpolators(conditions=conditions)
-
-    if model_no == 1:
-        model = models.ModelAccelerationDependent()
-    elif model_no == 2:
-        model = models.ModelAccelerationDependentWithBias(state_interpolators)
-    elif model_no == 3:
-        model = models.ModelGeneralizedGapWithBias()
-    elif model_no == 4:
-        model = models.ModelAccelerationIndependentConstantBounds(state_interpolators)
-    elif model_no == 5:
-        model = models.ModelAccelerationDependentConstantBounds(state_interpolators)
-    else:
-        raise Exception("Model number not recognized")
-
+def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="bic", T_dur=4):
+    model = models.get_model(model_no=model_no, T_dur=T_dur)
     exp_data = pd.read_csv("data/measures.csv")
-
-    # This excludes very few trials with long RTs, but also excludes about 800 (21%) trials with missing RTs (unless they are replaced by 0 already)
+    # This excludes a small fraction of trials with outlier RTs, but also excludes about 800 trials with missing RTs (unless they are replaced by 0 already)
     exp_data = exp_data[(exp_data.RT < T_dur)]
-
     exp_data.a_values = exp_data.a_values.apply(ast.literal_eval).apply(tuple)
 
     # training on a subset of data
@@ -79,11 +53,11 @@ def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6)
 
     file_name = "subj_%s_parameters_fitted.csv" % (str(subj_id))
     if not os.path.isfile(os.path.join(output_directory, file_name)):
-        utils.write_to_csv(output_directory, file_name, ["subj_id", "loss"] + model.param_names, write_mode="w")
+        utils.write_to_csv(output_directory, file_name, ["subj_id", "loss"] + model.get_model_parameter_names(), write_mode="w")
 
     print(subj_id)
 
-    fitted_model = fit_model(model.model, training_data, loss)
+    fitted_model = fit_model(model, training_data, loss)
     utils.write_to_csv(output_directory, file_name,
                        [subj_id, fitted_model.get_fit_result().value()]
                        + [float(param) for param in fitted_model.get_model_parameters()])
@@ -93,5 +67,4 @@ def fit_model_by_condition(model_no=1, subj_idx=0, loss_name="vincent", T_dur=6)
 
     return fitted_model
 
-# fitted_model = fit_model_by_condition(model_no=2, subj_idx="all", loss_name="wls", T_dur=6)
-fitted_model = fit_model_by_condition(model_no=4, subj_idx="all", loss_name="vincent", T_dur=6)
+fitted_model = fit_model_by_condition(model_no=8, subj_idx="all", loss_name="bic", T_dur=4)

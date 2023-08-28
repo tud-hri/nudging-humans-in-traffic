@@ -9,38 +9,6 @@ import csv
 import pandas as pd
 import scipy
 
-def get_state_interpolators(conditions):
-    interpolators = [get_state_interpolators_per_condition(condition) for condition in conditions]
-    return {str(condition): interpolator for condition, interpolator in zip(conditions, interpolators)}
-
-def get_state_interpolators_per_condition(condition, T_dur=6.0):
-    d_0 = condition["d_0"]
-    tta_0 = condition["tta_0"]
-    a_values = condition["a_values"]
-    a_duration = condition["a_duration"]
-
-    breakpoints = np.array([0., 0.25, (0.25+a_duration), min(0.25 + a_duration*2, T_dur)] + [T_dur])
-
-    v_0 = d_0 / tta_0
-    a_values = np.concatenate([a_values, [0.]])
-    v_values = np.concatenate([[v_0], v_0 + np.cumsum(np.diff(breakpoints) * a_values[:-1])])
-    d_values = np.concatenate([[d_0], d_0 - np.cumsum(np.diff(breakpoints) * (v_values[1:] + v_values[:-1]) / 2)])
-
-    tta_values = d_values / v_values
-    # if at some point the oncoming vehicle starts moving away from the intersection, tta goes negative
-    # to avoid this, we create a bound on TTA: if v becomes small enough, TTA = tta_bound
-    v_threshold = 1
-    tta_values[v_values<v_threshold] = d_values[v_values<v_threshold] / v_threshold
-
-    # acceleration is piecewise-constant
-    f_a = scipy.interpolate.interp1d(breakpoints, a_values, kind=0)
-    # under piecewise-constant acceleration, v and tta is piecewise-linear
-    f_tta = scipy.interpolate.interp1d(breakpoints, tta_values, kind=1)
-    # under piecewise-linear v, d is piecewise-quadratic, but piecewise-linear approximation is very close in our case
-    f_d = scipy.interpolate.interp1d(breakpoints, d_values, kind=1)
-
-    return f_tta, f_d, f_a
-
 def get_nudge_condition_map():
     return {(0.0, 4, 4, 0.0): "Long acceleration",
             (0.0, 4, -4, 0.0): "Acceleration nudge",
@@ -77,7 +45,7 @@ def write_to_csv(directory, filename, array, write_mode="a"):
         writer.writerow(array)
 
 
-def get_psf_ci(data, var="is_go_decision"):
+def get_psf_ci(data, var="is_go_decision", z=1):
     # psf: psychometric function
     # ci: dataframe with confidence intervals for probability per nudge level
     conditions = get_nudge_condition_map().values()
@@ -90,8 +58,8 @@ def get_psf_ci(data, var="is_go_decision"):
     ci = pd.DataFrame(psf, columns=["p"], index=conditions)
 
     n = [len(data[(data.condition == condition)]) for condition in conditions]
-    ci["ci_l"] = ci["p"] - np.sqrt(psf * (1 - psf) / n)
-    ci["ci_r"] = ci["p"] + np.sqrt(psf * (1 - psf) / n)
+    ci["ci_l"] = ci["p"] - z*np.sqrt(psf * (1 - psf) / n)
+    ci["ci_r"] = ci["p"] + z*np.sqrt(psf * (1 - psf) / n)
 
     return ci.reset_index().rename(columns={"index": "condition"})
 
