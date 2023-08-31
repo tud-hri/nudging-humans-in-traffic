@@ -3,6 +3,9 @@ import scipy.stats
 import scipy.interpolate
 import pyddm
 
+import utils
+
+
 def get_conditions():
     return([{"tta_0": tta_0, "d_0": d_0, "a_values": a_values, "a_duration": a_duration}
                   for tta_0 in [4.5, 5.5]
@@ -65,17 +68,31 @@ class DriftAccelerationDependent(pyddm.models.Drift):
     beta_tta = 1.0
 
     def get_drift(self, t, conditions, **kwargs):
-        f_tta, f_d, f_a = self.state_interpolators[str(conditions)]
+        f_tta, f_d, f_a, f_tta_dot = self.state_interpolators[str(conditions)]
         tta = f_tta(t)
         d = f_d(t)
         a = f_a(t)
         return self.alpha * (self.beta_tta * tta + self.beta_d * d - self.beta_a*a - self.theta)
 
-def get_state_interpolators(conditions):
-    interpolators = [get_state_interpolators_per_condition(condition) for condition in conditions]
+class DriftTTADotDependent(pyddm.models.Drift):
+    name = "Drift depends on tta(t), d(t), and tta_dot(t)"
+    required_parameters = ["alpha", "beta_d", "beta_a", "theta", "state_interpolators"]
+    required_conditions = ["tta_0", "d_0", "a_values", "a_duration"]
+    # coefficient in front of tta is always 1.0
+    beta_tta = 1.0
+
+    def get_drift(self, t, conditions, **kwargs):
+        f_tta, f_d, f_a, f_tta_dot = self.state_interpolators[str(conditions)]
+        tta = f_tta(t)
+        d = f_d(t)
+        f_tta_dot = f_tta_dot(t)
+        return self.alpha * (self.beta_tta * tta + self.beta_d * d + self.beta_a*f_tta_dot - self.theta)
+
+def get_state_interpolators(conditions, T_dur):
+    interpolators = [get_state_interpolators_per_condition(condition, T_dur) for condition in conditions]
     return {str(condition): interpolator for condition, interpolator in zip(conditions, interpolators)}
 
-def get_state_interpolators_per_condition(condition, T_dur=6.0):
+def get_state_interpolators_per_condition(condition, T_dur):
     d_0 = condition["d_0"]
     tta_0 = condition["tta_0"]
     a_values = condition["a_values"]
@@ -90,11 +107,11 @@ def get_state_interpolators_per_condition(condition, T_dur=6.0):
 
     tta_values = d_values / v_values
     # if at some point the oncoming vehicle starts moving away from the intersection, tta goes negative
-    # to avoid this, we create a bound on TTA: if v becomes small enough, TTA = tta_bound
+    # to avoid this, we create an upper bound on TTA: if v becomes small enough, TTA = d / v_threshold
     v_threshold = 1
     tta_values[v_values<v_threshold] = d_values[v_values<v_threshold] / v_threshold
 
-    print(breakpoints)
+    # print(breakpoints)
     # acceleration is piecewise-constant
     f_a = scipy.interpolate.interp1d(breakpoints, a_values, kind=0)
     # under piecewise-constant acceleration, v and tta is piecewise-linear
@@ -102,7 +119,13 @@ def get_state_interpolators_per_condition(condition, T_dur=6.0):
     # under piecewise-linear v, d is piecewise-quadratic, but piecewise-linear approximation is very close in our case
     f_d = scipy.interpolate.interp1d(breakpoints, d_values, kind=1)
 
-    return f_tta, f_d, f_a
+    # tta dot is special because it's not a piecewise-linear function of t so we have to estimate it at a larger number of time points
+    t_values = np.linspace(start=0, stop=T_dur, num=51)
+    tta_dot_values = utils.get_derivative(t_values, f_tta(t_values))
+
+    f_tta_dot = scipy.interpolate.interp1d(t_values, tta_dot_values, kind=1)
+
+    return f_tta, f_d, f_a, f_tta_dot
 
 def get_model_components(state_interpolators):
     overlay_uniform = pyddm.OverlayNonDecisionUniform(nondectime=pyddm.Fittable(minval=0, maxval=2.0),
@@ -122,6 +145,12 @@ def get_model_components(state_interpolators):
                                                                 theta=pyddm.Fittable(minval=0, maxval=20),
                                                                 state_interpolators=state_interpolators)
 
+    drift_with_tta_dot = DriftTTADotDependent(alpha=pyddm.Fittable(minval=0.0, maxval=5.0),
+                                                                beta_d=pyddm.Fittable(minval=0.0, maxval=1.0),
+                                                                beta_a=pyddm.Fittable(minval=0.0, maxval=10.0),
+                                                                theta=pyddm.Fittable(minval=0, maxval=20),
+                                                                state_interpolators=state_interpolators)
+
     bound_constant = pyddm.BoundConstant(B=pyddm.Fittable(minval=0.1, maxval=5.0))
 
     bound_collapsing_tta = BoundCollapsingTta(b_0=pyddm.Fittable(minval=0.5, maxval=5.0),
@@ -133,12 +162,12 @@ def get_model_components(state_interpolators):
 
     IC_point_ratio = pyddm.ICPointRatio(x0=pyddm.Fittable(minval=-1.0, maxval=1.0))
 
-    return overlay_gaussian, overlay_uniform, drift_no_acceleration, drift_with_acceleration, bound_constant, bound_collapsing_tta, IC_zero, IC_point_ratio
+    return overlay_gaussian, overlay_uniform, drift_no_acceleration, drift_with_acceleration, drift_with_tta_dot, bound_constant, bound_collapsing_tta, IC_zero, IC_point_ratio
 
 def get_model(model_no, T_dur):
-    state_interpolators = get_state_interpolators(get_conditions())
+    state_interpolators = get_state_interpolators(get_conditions(), T_dur)
     (overlay_gaussian, overlay_uniform,
-     drift_no_acceleration, drift_with_acceleration,
+     drift_no_acceleration, drift_with_acceleration, drift_with_tta_dot,
      bound_constant, bound_collapsing_tta,
      IC_zero, IC_point_ratio) = get_model_components(state_interpolators=state_interpolators)
 
@@ -176,12 +205,19 @@ def get_model(model_no, T_dur):
         drift = drift_with_acceleration
         bound = bound_collapsing_tta
         IC = IC_point_ratio
-    elif model_no == 9:
-        # Model 2 but with uniform NDT
-        drift = drift_no_acceleration
-        bound = bound_constant
-        IC = IC_point_ratio
-        overlay = overlay_uniform
+
+    # these two models can be run to check NDT assumptions and tta_dot/a comparison
+    # elif model_no == 9:
+    #     # Model 2 but with uniform NDT
+    #     drift = drift_no_acceleration
+    #     bound = bound_constant
+    #     IC = IC_point_ratio
+    #     overlay = overlay_uniform
+    # elif model_no == 10:
+    #     # Model 6 but with tta_dot instead of a in the acceleration term
+    #     drift = drift_with_tta_dot
+    #     bound = bound_constant
+    #     IC = IC_point_ratio
 
     return(pyddm.Model(name="Model %i" % model_no, choice_names=("Go", "Stay"),
                         drift=drift, bound=bound, IC=IC, overlay=overlay,
