@@ -133,6 +133,7 @@ def process_data(data):
 
 data_path = "data"
 
+# Uncomment this line to re-generate merged raw data file from individual raw data files
 # merge_csv_files(data_path=data_path)
 
 print("Merging finalized, preprocessing started...")
