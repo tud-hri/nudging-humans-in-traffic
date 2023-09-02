@@ -1,5 +1,4 @@
 import pyddm
-import numpy as np
 import models
 import loss_functions
 import pandas as pd
